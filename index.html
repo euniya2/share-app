@@ -3,70 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>우리반 HTML 링크 생성기</title>
+    <title>Web Deployment Console</title>
     <!-- 스타일 꾸미기 (Tailwind CSS) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- URL 압축 라이브러리 (LZ-String) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; }
-        .editor-container { height: calc(100vh - 200px); }
+        /* 폰트: 코딩에 최적화된 모노스페이스 폰트와 깔끔한 산세리프 */
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Pretendard:wght@400;600;700&display=swap');
+        
+        body { font-family: 'Pretendard', sans-serif; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+        
+        /* 스크롤바 커스텀 (다크 테마) */
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #1e1e1e; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        .editor-container { height: calc(100vh - 280px); min-height: 400px; }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen">
+<body class="bg-[#0f1117] text-gray-300 min-h-screen flex flex-col">
 
-    <!-- 1. 메인 화면 (에디터) -->
-    <div id="app-ui" class="container mx-auto px-4 py-8 max-w-4xl">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-slate-800 mb-2">🚀 우리반 웹사이트 배포기</h1>
-            <p class="text-slate-600">작성한 HTML 코드를 붙여넣고 친구들에게 공유할 주소를 만드세요.</p>
+    <!-- 상단 네비게이션 스타일 -->
+    <nav class="border-b border-gray-800 bg-[#161b22] py-4 px-6 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            <span class="ml-4 font-bold text-white tracking-wide">WEB DEPLOYMENT CONSOLE</span>
+        </div>
+        <div class="text-xs text-gray-500 code-font">v1.0.0 stable</div>
+    </nav>
+
+    <!-- 메인 컨텐츠 -->
+    <main id="app-ui" class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
+        
+        <header class="mb-6">
+            <h1 class="text-2xl font-bold text-white mb-2">Static Web Hosting Service</h1>
+            <p class="text-gray-500 text-sm">Serverless HTML deployment platform for students.</p>
         </header>
 
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <label class="block text-slate-700 font-bold mb-2"> 여기에 코드를 붙여넣으세요 👇</label>
-            <div class="editor-container mb-4">
+        <!-- 에디터 영역 -->
+        <div class="bg-[#1e1e1e] rounded-lg shadow-2xl border border-gray-700 overflow-hidden">
+            <!-- 에디터 탭 바 -->
+            <div class="bg-[#252526] px-4 py-2 border-b border-gray-700 flex items-center">
+                <span class="text-sm text-blue-400 font-medium code-font border-b-2 border-blue-400 pb-1 px-2">index.html</span>
+            </div>
+
+            <!-- 코드 입력창 -->
+            <div class="editor-container relative group">
+                <!-- 안내 문구 (placeholder 대신 오버레이로 처리하거나 placeholder 사용) -->
                 <textarea id="source-code" 
-                    class="w-full h-full p-4 border border-slate-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-                    placeholder="<html>...</html>"></textarea>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <button onclick="previewCode()" class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition w-full sm:w-auto">
-                    미리보기
-                </button>
-                <button onclick="generateLink()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow transition w-full sm:w-auto">
-                    ✨ 공유 링크 생성하기
-                </button>
+                    class="w-full h-full p-4 bg-[#1e1e1e] text-[#d4d4d4] code-font text-sm focus:outline-none resize-none leading-relaxed"
+                    spellcheck="false"
+                    placeholder="<!-- 여기에 작성한 HTML 코드를 붙여넣으세요 -->"></textarea>
             </div>
         </div>
 
-        <!-- 결과 링크 표시 영역 -->
-        <div id="result-area" class="hidden mt-6 bg-green-50 border border-green-200 rounded-xl p-6 text-center animate-bounce-in">
-            <h3 class="text-green-800 font-bold text-lg mb-2">🎉 링크가 생성되었습니다!</h3>
-            <p class="text-sm text-green-700 mb-4">아래 주소를 복사해서 친구에게 보내세요.</p>
-            
-            <div class="flex items-center gap-2 bg-white border border-green-300 rounded-lg p-2 mb-4">
-                <input type="text" id="share-link" readonly class="w-full bg-transparent outline-none text-slate-600 text-sm px-2">
-                <button onclick="copyLink()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm whitespace-nowrap">
-                    복사
-                </button>
-            </div>
-            
-            <a id="preview-btn" href="#" target="_blank" class="inline-block text-green-600 underline text-sm hover:text-green-800">
-                새 창에서 확인하기 &rarr;
-            </a>
+        <!-- 컨트롤 버튼 영역 -->
+        <div class="flex flex-col sm:flex-row gap-3 mt-6 justify-end">
+            <button onclick="previewCode()" class="px-6 py-2.5 bg-[#2d333b] hover:bg-[#373e47] text-gray-300 rounded border border-gray-600 transition text-sm font-medium">
+                Preview
+            </button>
+            <button onclick="generateLink()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-lg transition text-sm font-bold flex items-center justify-center gap-2">
+                Generate URL
+            </button>
         </div>
-    </div>
 
-    <!-- 스크립트 로직 -->
+        <!-- 결과 링크 표시 영역 (처음엔 숨김) -->
+        <div id="result-area" class="hidden mt-8 border-t border-gray-800 pt-8">
+            <div class="bg-[#161b22] border border-gray-700 rounded-lg p-6">
+                <h3 class="text-green-400 font-bold text-lg mb-2">Deploy Success</h3>
+                <p class="text-sm text-gray-500 mb-4">Your static web page is live. Copy the link below.</p>
+                
+                <div class="flex items-center gap-0 bg-[#0d1117] border border-gray-600 rounded overflow-hidden mb-4">
+                    <input type="text" id="share-link" readonly class="w-full bg-transparent outline-none text-gray-400 text-sm px-4 py-3 code-font">
+                    <button onclick="copyLink()" class="bg-[#21262d] hover:bg-[#30363d] text-white px-6 py-3 text-sm border-l border-gray-600 transition">
+                        Copy
+                    </button>
+                </div>
+                
+                <a id="preview-btn" href="#" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm underline underline-offset-4">
+                    Open in new tab ->
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-6 text-gray-600 text-xs border-t border-gray-800 mt-auto">
+        &copy; 2024 Student Developer Platform. All rights reserved.
+    </footer>
+
+    <!-- 스크립트 로직 (기능은 동일) -->
     <script>
-        // 1. 페이지 로드 시: URL에 데이터가 있으면 바로 그 화면을 보여줌 (뷰어 모드)
+        // 1. 페이지 로드 및 뷰어 모드 처리
         window.onload = function() {
             const params = new URLSearchParams(window.location.search);
             const compressed = params.get('data');
 
             if (compressed) {
-                // 압축된 데이터가 있다면 -> 압축을 풀고 화면을 교체
+                // 뷰어 모드: 압축된 데이터 해제 및 표시
                 try {
                     const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
                     if (decompressed) {
@@ -74,29 +112,59 @@
                         document.write(decompressed);
                         document.close();
                     } else {
-                        alert("코드를 읽을 수 없습니다.");
+                        alert("Error: Invalid Code Data");
                     }
                 } catch (e) {
                     console.error(e);
-                    alert("잘못된 링크입니다.");
+                    alert("Error: Corrupted Link");
                 }
             } else {
-                // 데이터가 없다면 -> 에디터 모드 유지
-                // 기본 예제 코드 넣어주기
+                // 에디터 모드: 기본 템플릿 코드 제공 (조금 더 세련된 예제)
                 document.getElementById('source-code').value = 
 `<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Portfolio</title>
     <style>
-        body { background-color: #f0f9ff; text-align: center; padding: 50px; font-family: sans-serif; }
-        h1 { color: #0284c7; }
-        .box { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        body { 
+            background-color: #111; 
+            color: #eee; 
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: #222;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #333;
+            text-align: center;
+            max-width: 400px;
+        }
+        h1 { margin: 0 0 1rem 0; color: #fff; }
+        p { color: #888; line-height: 1.6; }
+        .btn {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.8rem 1.5rem;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <div class="box">
-        <h1>안녕! 내 홈페이지야 👋</h1>
-        <p>선생님이 만들어준 도구로 만들었어.</p>
+    <div class="card">
+        <h1>Hello, World!</h1>
+        <p>This page was deployed using the Student Web Console.</p>
+        <a href="#" class="btn">View Project</a>
     </div>
 </body>
 </html>`;
@@ -107,24 +175,19 @@
         function generateLink() {
             const code = document.getElementById('source-code').value;
             if (!code.trim()) {
-                alert("코드를 입력해주세요!");
+                alert("Please enter the HTML code.");
                 return;
             }
 
-            // 코드 압축
             const compressed = LZString.compressToEncodedURIComponent(code);
-            
-            // 현재 사이트 주소 + ?data=압축된코드
             const currentUrl = window.location.href.split('?')[0];
             const fullUrl = `${currentUrl}?data=${compressed}`;
 
-            // URL 길이 체크 (브라우저 한계 고려)
-            if (fullUrl.length > 8000) {
-                alert("코드가 너무 깁니다! 이미지를 줄이거나 코드를 조금 줄여주세요.");
+            if (fullUrl.length > 10000) {
+                alert("Warning: Code size is too large for a URL.");
                 return;
             }
 
-            // 결과 보여주기
             const resultArea = document.getElementById('result-area');
             const linkInput = document.getElementById('share-link');
             const previewBtn = document.getElementById('preview-btn');
@@ -133,7 +196,6 @@
             linkInput.value = fullUrl;
             previewBtn.href = fullUrl;
 
-            // 화면 스크롤 이동
             resultArea.scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -142,10 +204,10 @@
             const copyText = document.getElementById("share-link");
             copyText.select();
             document.execCommand("copy");
-            alert("주소가 복사되었습니다! 친구에게 붙여넣기 하세요.");
+            alert("Copied to clipboard.");
         }
 
-        // 4. 미리보기 (새 창 열어서 테스트)
+        // 4. 미리보기
         function previewCode() {
             const code = document.getElementById('source-code').value;
             const newWindow = window.open();
