@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리반 HTML 링크 생성기</title>
+    <!-- 스타일 꾸미기 (Tailwind CSS) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- URL 압축 라이브러리 (LZ-String) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .editor-container { height: calc(100vh - 200px); }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+
+    <!-- 1. 메인 화면 (에디터) -->
+    <div id="app-ui" class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">🚀 우리반 웹사이트 배포기</h1>
+            <p class="text-slate-600">작성한 HTML 코드를 붙여넣고 친구들에게 공유할 주소를 만드세요.</p>
+        </header>
+
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <label class="block text-slate-700 font-bold mb-2"> 여기에 코드를 붙여넣으세요 👇</label>
+            <div class="editor-container mb-4">
+                <textarea id="source-code" 
+                    class="w-full h-full p-4 border border-slate-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+                    placeholder="<html>...</html>"></textarea>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <button onclick="previewCode()" class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition w-full sm:w-auto">
+                    미리보기
+                </button>
+                <button onclick="generateLink()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow transition w-full sm:w-auto">
+                    ✨ 공유 링크 생성하기
+                </button>
+            </div>
+        </div>
+
+        <!-- 결과 링크 표시 영역 -->
+        <div id="result-area" class="hidden mt-6 bg-green-50 border border-green-200 rounded-xl p-6 text-center animate-bounce-in">
+            <h3 class="text-green-800 font-bold text-lg mb-2">🎉 링크가 생성되었습니다!</h3>
+            <p class="text-sm text-green-700 mb-4">아래 주소를 복사해서 친구에게 보내세요.</p>
+            
+            <div class="flex items-center gap-2 bg-white border border-green-300 rounded-lg p-2 mb-4">
+                <input type="text" id="share-link" readonly class="w-full bg-transparent outline-none text-slate-600 text-sm px-2">
+                <button onclick="copyLink()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded text-sm whitespace-nowrap">
+                    복사
+                </button>
+            </div>
+            
+            <a id="preview-btn" href="#" target="_blank" class="inline-block text-green-600 underline text-sm hover:text-green-800">
+                새 창에서 확인하기 &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- 스크립트 로직 -->
+    <script>
+        // 1. 페이지 로드 시: URL에 데이터가 있으면 바로 그 화면을 보여줌 (뷰어 모드)
+        window.onload = function() {
+            const params = new URLSearchParams(window.location.search);
+            const compressed = params.get('data');
+
+            if (compressed) {
+                // 압축된 데이터가 있다면 -> 압축을 풀고 화면을 교체
+                try {
+                    const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
+                    if (decompressed) {
+                        document.open();
+                        document.write(decompressed);
+                        document.close();
+                    } else {
+                        alert("코드를 읽을 수 없습니다.");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("잘못된 링크입니다.");
+                }
+            } else {
+                // 데이터가 없다면 -> 에디터 모드 유지
+                // 기본 예제 코드 넣어주기
+                document.getElementById('source-code').value = 
+`<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { background-color: #f0f9ff; text-align: center; padding: 50px; font-family: sans-serif; }
+        h1 { color: #0284c7; }
+        .box { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>안녕! 내 홈페이지야 👋</h1>
+        <p>선생님이 만들어준 도구로 만들었어.</p>
+    </div>
+</body>
+</html>`;
+            }
+        };
+
+        // 2. 링크 생성 함수
+        function generateLink() {
+            const code = document.getElementById('source-code').value;
+            if (!code.trim()) {
+                alert("코드를 입력해주세요!");
+                return;
+            }
+
+            // 코드 압축
+            const compressed = LZString.compressToEncodedURIComponent(code);
+            
+            // 현재 사이트 주소 + ?data=압축된코드
+            const currentUrl = window.location.href.split('?')[0];
+            const fullUrl = `${currentUrl}?data=${compressed}`;
+
+            // URL 길이 체크 (브라우저 한계 고려)
+            if (fullUrl.length > 8000) {
+                alert("코드가 너무 깁니다! 이미지를 줄이거나 코드를 조금 줄여주세요.");
+                return;
+            }
+
+            // 결과 보여주기
+            const resultArea = document.getElementById('result-area');
+            const linkInput = document.getElementById('share-link');
+            const previewBtn = document.getElementById('preview-btn');
+
+            resultArea.classList.remove('hidden');
+            linkInput.value = fullUrl;
+            previewBtn.href = fullUrl;
+
+            // 화면 스크롤 이동
+            resultArea.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 3. 복사 버튼
+        function copyLink() {
+            const copyText = document.getElementById("share-link");
+            copyText.select();
+            document.execCommand("copy");
+            alert("주소가 복사되었습니다! 친구에게 붙여넣기 하세요.");
+        }
+
+        // 4. 미리보기 (새 창 열어서 테스트)
+        function previewCode() {
+            const code = document.getElementById('source-code').value;
+            const newWindow = window.open();
+            newWindow.document.write(code);
+            newWindow.document.close();
+        }
+    </script>
+</body>
+</html>
