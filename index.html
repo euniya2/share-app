@@ -47,9 +47,19 @@
 
         <!-- 에디터 영역 -->
         <div class="bg-[#1e1e1e] rounded-lg shadow-2xl border border-gray-700 overflow-hidden">
-            <!-- 에디터 탭 바 -->
-            <div class="bg-[#252526] px-4 py-2 border-b border-gray-700 flex items-center">
+            <!-- 에디터 탭 바 (안내 문구 강조됨) -->
+            <div class="bg-[#252526] px-4 py-2 border-b border-gray-700 flex items-center justify-between">
                 <span class="text-sm text-blue-400 font-medium code-font border-b-2 border-blue-400 pb-1 px-2">index.html</span>
+                
+                <!-- 안내 문구 영역 (가시성 개선) -->
+                <div class="flex items-center">
+                    <span class="text-xs font-bold text-yellow-400 flex items-center gap-1.5 bg-[#323842] px-3 py-1.5 rounded border border-yellow-500/30 shadow-sm animate-pulse">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                        </svg>
+                        필독: 기존 코드를 모두 지우고 붙여넣으세요!
+                    </span>
+                </div>
             </div>
 
             <!-- 코드 입력창 -->
