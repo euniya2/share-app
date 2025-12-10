@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>관리자 페이지</title>
+    <!-- 스타일 생략 -->
+</head>
+<body>
+    <h1>학생 작품 목록</h1>
+    <ul id="list"></ul>
+
+    <script type="module">
+        import { initializeApp } from "[https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js)";
+        import { getFirestore, collection, getDocs, deleteDoc, doc, orderBy, query } 
+            from "[https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js)";
+
+        // =========================================================================
+        // [설정 완료] 선생님의 Firebase Key가 적용되었습니다.
+        // =========================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCn907zY1vFfAMNPxyflCOEeJSyd0yKnhs",
+            authDomain: "web-class-console.firebaseapp.com",
+            projectId: "web-class-console",
+            storageBucket: "web-class-console.firebasestorage.app",
+            messagingSenderId: "771726293778",
+            appId: "1:771726293778:web:e126c7c62ee339f5dfd1cb"
+        };
+        // =========================================================================
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // 목록 가져오기
+        async function loadList() {
+            const listEl = document.getElementById('list');
+            listEl.innerHTML = "로딩 중...";
+
+            // 최신순 정렬 쿼리
+            const q = query(collection(db, "pages"), orderBy("createdAt", "desc"));
+            const querySnapshot = await getDocs(q);
+
+            listEl.innerHTML = ""; // 초기화
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    [${doc.id}] 
+                    <a href="index.html?id=${doc.id}" target="_blank">보기</a>
+                    <button onclick="deleteItem('${doc.id}')">삭제</button>
+                    <br>
+                    <small>${new Date(data.createdAt.seconds * 1000).toLocaleString()}</small>
+                `;
+                listEl.appendChild(li);
+            });
+        }
+        
+        // 전역 함수로 만들기 (모듈 스코프 밖으로 빼기)
+        window.deleteItem = async (id) => {
+            if(confirm("정말 삭제하시겠습니까?")) {
+                await deleteDoc(doc(db, "pages", id));
+                alert("삭제됨");
+                loadList(); // 목록 새로고침
+            }
+        };
+
+        loadList();
+    </script>
+</body>
+</html>
