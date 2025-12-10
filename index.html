@@ -3,36 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Deployment Console</title>
+    <title>Web Deployment Console (DB Ver.)</title>
     <!-- 스타일 꾸미기 (Tailwind CSS) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- URL 압축 라이브러리 (LZ-String) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    
     <style>
-        /* 폰트: 코딩에 최적화된 모노스페이스 폰트와 깔끔한 산세리프 */
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Pretendard:wght@400;600;700&display=swap');
+        @import url('[https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Pretendard:wght@400;600;700&display=swap](https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Pretendard:wght@400;600;700&display=swap)');
         
         body { font-family: 'Pretendard', sans-serif; }
         .code-font { font-family: 'JetBrains Mono', monospace; }
         
-        /* 스크롤바 커스텀 (다크 테마) */
         ::-webkit-scrollbar { width: 10px; }
         ::-webkit-scrollbar-track { background: #1e1e1e; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 5px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-
+        
         .editor-container { height: calc(100vh - 280px); min-height: 400px; }
         
-        /* QR 코드 모달 스타일 */
         .modal-overlay {
             display: none;
-            position: fixed;
-            top: 0; left: 0;
+            position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.7);
             z-index: 50;
-            align-items: center;
-            justify-content: center;
+            align-items: center; justify-content: center;
             backdrop-filter: blur(4px);
         }
         .modal-active { display: flex; }
@@ -40,45 +33,32 @@
 </head>
 <body class="bg-[#0f1117] text-gray-300 min-h-screen flex flex-col">
 
-    <!-- 상단 네비게이션 스타일 -->
     <nav class="border-b border-gray-800 bg-[#161b22] py-4 px-6 flex justify-between items-center">
         <div class="flex items-center gap-2">
             <div class="w-3 h-3 rounded-full bg-red-500"></div>
             <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
             <div class="w-3 h-3 rounded-full bg-green-500"></div>
-            <span class="ml-4 font-bold text-white tracking-wide">WEB DEPLOYMENT CONSOLE</span>
+            <span class="ml-4 font-bold text-white tracking-wide">WEB CONSOLE <span class="text-blue-500 text-xs ml-2 border border-blue-500 rounded px-1">DB MODE</span></span>
         </div>
-        <div class="text-xs text-gray-500 code-font">v1.0.0 stable</div>
+        <div class="text-xs text-gray-500 code-font">v2.0.0 Firebase</div>
     </nav>
 
-    <!-- 메인 컨텐츠 -->
-    <main id="app-ui" class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
-        
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
         <header class="mb-6">
             <h1 class="text-2xl font-bold text-white mb-2">Static Web Hosting Service</h1>
             <p class="text-gray-500 text-sm">Serverless HTML deployment platform for students.</p>
         </header>
 
-        <!-- 에디터 영역 -->
         <div class="bg-[#1e1e1e] rounded-lg shadow-2xl border border-gray-700 overflow-hidden">
-            <!-- 에디터 탭 바 (안내 문구 강조됨) -->
             <div class="bg-[#252526] px-4 py-2 border-b border-gray-700 flex items-center justify-between">
                 <span class="text-sm text-blue-400 font-medium code-font border-b-2 border-blue-400 pb-1 px-2">index.html</span>
-                
-                <!-- 안내 문구 영역 (가시성 개선) -->
                 <div class="flex items-center">
                     <span class="text-xs font-bold text-yellow-400 flex items-center gap-1.5 bg-[#323842] px-3 py-1.5 rounded border border-yellow-500/30 shadow-sm animate-pulse">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                        </svg>
                         Tip: Ctrl+A로 전체 선택 후 지우고 붙여넣으세요!
                     </span>
                 </div>
             </div>
-
-            <!-- 코드 입력창 -->
             <div class="editor-container relative group">
-                <!-- 안내 문구 (placeholder 대신 오버레이로 처리하거나 placeholder 사용) -->
                 <textarea id="source-code" 
                     class="w-full h-full p-4 bg-[#1e1e1e] text-[#d4d4d4] code-font text-sm focus:outline-none resize-none leading-relaxed"
                     spellcheck="false"
@@ -86,213 +66,152 @@
             </div>
         </div>
 
-        <!-- 컨트롤 버튼 영역 -->
         <div class="flex flex-col sm:flex-row gap-3 mt-6 justify-end">
-            <button onclick="previewCode()" class="px-6 py-2.5 bg-[#2d333b] hover:bg-[#373e47] text-gray-300 rounded border border-gray-600 transition text-sm font-medium">
-                Preview
-            </button>
-            <button id="generate-btn" onclick="generateLink()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-lg transition text-sm font-bold flex items-center justify-center gap-2">
-                Generate URL
-            </button>
+            <button onclick="previewCode()" class="px-6 py-2.5 bg-[#2d333b] hover:bg-[#373e47] text-gray-300 rounded border border-gray-600 transition text-sm font-medium">Preview</button>
+            <button id="generate-btn" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-lg transition text-sm font-bold flex items-center justify-center gap-2">Deploy (Save to DB)</button>
         </div>
 
-        <!-- 결과 링크 표시 영역 -->
         <div id="result-area" class="hidden mt-8 border-t border-gray-800 pt-8">
             <div class="bg-[#161b22] border border-gray-700 rounded-lg p-6">
                 <h3 class="text-green-400 font-bold text-lg mb-2">Deploy Success</h3>
-                <p class="text-sm text-gray-500 mb-4">Your static web page is live. Copy the link below.</p>
-                
+                <p class="text-sm text-gray-500 mb-4">Your page is saved on the server. Short link generated.</p>
                 <div class="flex items-center gap-0 bg-[#0d1117] border border-gray-600 rounded overflow-hidden mb-4">
                     <input type="text" id="share-link" readonly class="w-full bg-transparent outline-none text-gray-400 text-sm px-4 py-3 code-font">
-                    <button onclick="copyLink()" class="bg-[#21262d] hover:bg-[#30363d] text-white px-6 py-3 text-sm border-l border-gray-600 transition hover:text-blue-400 whitespace-nowrap">
-                        Copy
-                    </button>
-                    <button onclick="showQRCode()" class="bg-[#21262d] hover:bg-[#30363d] text-white px-4 py-3 text-sm border-l border-gray-600 transition hover:text-green-400" title="QR Code">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h-4v-2h4v-4h6v4zM4 12h8a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2v-8a2 2 0 012-2z" />
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h8a2 2 0 012 2v2H2V6a2 2 0 012-2z" />
-                        </svg>
-                    </button>
+                    <button onclick="copyLink()" class="bg-[#21262d] hover:bg-[#30363d] text-white px-6 py-3 text-sm border-l border-gray-600 transition hover:text-blue-400 whitespace-nowrap">Copy</button>
+                    <button onclick="showQRCode()" class="bg-[#21262d] hover:bg-[#30363d] text-white px-4 py-3 text-sm border-l border-gray-600 transition hover:text-green-400" title="QR Code">QR</button>
                 </div>
-                
                 <div class="flex justify-between items-center">
-                    <a id="preview-btn" href="#" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm underline underline-offset-4">
-                        Open in new tab ->
-                    </a>
-                    <span class="text-xs text-gray-500">Links are permanent unless hosting changes.</span>
+                    <a id="preview-btn" href="#" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm underline underline-offset-4">Open in new tab -></a>
                 </div>
             </div>
         </div>
     </main>
     
-    <!-- QR 코드 모달 -->
     <div id="qr-modal" class="modal-overlay" onclick="closeQRCode(event)">
         <div class="bg-white p-6 rounded-xl shadow-2xl text-center transform scale-100 transition-transform max-w-sm mx-4">
-            <h3 class="text-gray-800 font-bold text-lg mb-4">Scan to View</h3>
+            <h3 class="text-gray-800 font-bold text-lg mb-4">Scan QR Code</h3>
             <div id="qrcode-container" class="bg-gray-100 p-2 rounded mb-4 flex justify-center">
-                <!-- QR 이미지가 여기에 들어갑니다 -->
                 <img id="qr-image" src="" alt="Generating QR..." class="w-48 h-48 object-contain">
             </div>
-            <p class="text-xs text-gray-500 mb-4 break-all px-2">Scan with your phone camera</p>
-            <button onclick="document.getElementById('qr-modal').classList.remove('modal-active')" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-2 rounded font-medium transition">
-                Close
-            </button>
+            <button onclick="document.getElementById('qr-modal').classList.remove('modal-active')" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-2 rounded font-medium transition">Close</button>
         </div>
     </div>
 
-    <footer class="text-center py-6 text-gray-600 text-xs border-t border-gray-800 mt-auto">
-        &copy; 2024 Student Developer Platform. All rights reserved.
-    </footer>
+    <!-- 🔥 Firebase 연동 스크립트 -->
+    <script type="module">
+        // =========================================================================
+        // [설정 완료] 선생님의 Firebase Key가 적용되었습니다.
+        // =========================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCn907zY1vFfAMNPxyflCOEeJSyd0yKnhs",
+            authDomain: "web-class-console.firebaseapp.com",
+            projectId: "web-class-console",
+            storageBucket: "web-class-console.firebasestorage.app",
+            messagingSenderId: "771726293778",
+            appId: "1:771726293778:web:e126c7c62ee339f5dfd1cb"
+        };
+        // =========================================================================
 
-    <!-- 스크립트 로직 -->
-    <script>
-        // 1. 페이지 로드 및 뷰어 모드 처리
-        window.onload = function() {
-            const params = new URLSearchParams(window.location.search);
-            const compressed = params.get('data');
+        import { initializeApp } from "[https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js)";
+        import { getFirestore, collection, addDoc, getDoc, doc, serverTimestamp } 
+            from "[https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js)";
 
-            if (compressed) {
-                // 뷰어 모드: 압축된 데이터 해제 및 표시
-                try {
-                    const decompressed = LZString.decompressFromEncodedURIComponent(compressed);
-                    if (decompressed) {
-                        document.open();
-                        document.write(decompressed);
-                        document.close();
-                    } else {
-                        alert("Error: Invalid Code Data");
-                    }
-                } catch (e) {
-                    console.error(e);
-                    alert("Error: Corrupted Link");
-                }
-            } else {
-                // 에디터 모드: 기본 템플릿 코드 제공 (조금 더 세련된 예제)
-                document.getElementById('source-code').value = 
-`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Portfolio</title>
-    <style>
-        body { 
-            background-color: #111; 
-            color: #eee; 
-            font-family: system-ui, -apple-system, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+        // Firebase 초기화 확인
+        let db;
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("Firebase Connected Successfully");
+        } catch (error) { 
+            console.error("Firebase Init Error:", error);
+            alert("Firebase 연결 실패! 콘솔을 확인해주세요.");
         }
-        .card {
-            background: #222;
-            padding: 2rem;
-            border-radius: 12px;
-            border: 1px solid #333;
-            text-align: center;
-            max-width: 400px;
-        }
-        h1 { margin: 0 0 1rem 0; color: #fff; }
-        p { color: #888; line-height: 1.6; }
-        .btn {
-            display: inline-block;
-            margin-top: 1.5rem;
-            padding: 0.8rem 1.5rem;
-            background: #3b82f6;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h1>Hello, World!</h1>
-        <p>This page was deployed using the Student Web Console.</p>
-        <a href="#" class="btn">View Project</a>
-    </div>
-</body>
-</html>`;
+
+        // 저장 함수
+        window.saveCodeToDB = async function() {
+            const code = document.getElementById('source-code').value;
+            if (!code.trim()) return alert("HTML 코드를 입력해주세요.");
+
+            const btn = document.getElementById('generate-btn');
+            const originalText = btn.innerText;
+            btn.innerText = "Saving...";
+            btn.disabled = true;
+
+            try {
+                // Firestore의 'pages' 컬렉션에 저장
+                const docRef = await addDoc(collection(db, "pages"), {
+                    code: code,
+                    createdAt: serverTimestamp(),
+                    type: "student-deploy"
+                });
+
+                // 짧은 링크 생성 (현재주소?id=문서ID)
+                const currentUrl = window.location.href.split('?')[0];
+                const shortUrl = `${currentUrl}?id=${docRef.id}`;
+
+                // 결과 표시
+                document.getElementById('result-area').classList.remove('hidden');
+                document.getElementById('share-link').value = shortUrl;
+                document.getElementById('preview-btn').href = shortUrl;
+                document.getElementById('result-area').scrollIntoView({ behavior: 'smooth' });
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                alert("저장 중 오류가 발생했습니다: " + e.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         };
 
-        // 2. 링크 생성 함수
-        function generateLink() {
-            const code = document.getElementById('source-code').value;
-            if (!code.trim()) {
-                alert("Please enter the HTML code.");
-                return;
-            }
+        // 버튼 이벤트 리스너
+        document.getElementById('generate-btn').addEventListener('click', window.saveCodeToDB);
 
-            const btn = document.getElementById('generate-btn');
-            const originalText = btn.innerHTML;
-            btn.innerText = "Processing...";
-            btn.disabled = true;
+        // 페이지 로드 시 (뷰어/에디터 모드 판별)
+        window.onload = async function() {
+            const params = new URLSearchParams(window.location.search);
+            const docId = params.get('id');
 
-            // 약간의 딜레이를 주어 처리되는 느낌 제공
-            setTimeout(() => {
-                const compressed = LZString.compressToEncodedURIComponent(code);
-                const currentUrl = window.location.href.split('?')[0];
-                const fullUrl = `${currentUrl}?data=${compressed}`;
-
-                if (fullUrl.length > 8000) {
-                    alert("Warning: Code is too long! Some browsers may not open this link.\n(Max recommended: ~8000 chars)");
+            if (docId) {
+                // 뷰어 모드
+                if (!db) return document.body.innerHTML = "<h1 style='color:white; padding:20px'>Error: Firebase Not Connected</h1>";
+                try {
+                    const docRef = doc(db, "pages", docId);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        document.open(); document.write(docSnap.data().code); document.close();
+                    } else {
+                        document.body.innerHTML = "<h1 style='color:white; padding:20px'>404: Page Not Found</h1>";
+                    }
+                } catch (e) {
+                    console.error("Load Error:", e);
+                    document.body.innerHTML = "<h1 style='color:white; padding:20px'>Error loading page</h1>";
                 }
-
-                const resultArea = document.getElementById('result-area');
-                const linkInput = document.getElementById('share-link');
-                const previewBtn = document.getElementById('preview-btn');
-
-                resultArea.classList.remove('hidden');
-                linkInput.value = fullUrl;
-                previewBtn.href = fullUrl;
-
-                resultArea.scrollIntoView({ behavior: 'smooth' });
-                
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }, 500);
-        }
-
-        // 3. 복사 버튼
+            } else {
+                // 에디터 모드 (기본 예제 코드)
+                document.getElementById('source-code').value = `<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <title>My Portfolio</title>\n    <style>\n        body { background:#111; color:#eee; font-family:sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; }\n        .card { background:#222; padding:2rem; border-radius:12px; border:1px solid #333; text-align:center; }\n        .btn { display:inline-block; margin-top:1.5rem; padding:0.8rem 1.5rem; background:#3b82f6; color:white; text-decoration:none; border-radius:6px; }\n    </style>\n</head>\n<body>\n    <div class="card">\n        <h1>Hello, World!</h1>\n        <p>This page is hosted on Firebase DB.</p>\n        <a href="#" class="btn">View Project</a>\n    </div>\n</body>\n</html>`;
+            }
+        };
+    </script>
+    
+    <script>
+        // 유틸리티 함수 (복사, QR 등)
         function copyLink() {
-            const copyText = document.getElementById("share-link");
-            copyText.select();
+            document.getElementById("share-link").select();
             document.execCommand("copy");
-            alert("Copied to clipboard.");
+            alert("링크가 복사되었습니다!");
         }
-
-        // 4. 미리보기
         function previewCode() {
-            const code = document.getElementById('source-code').value;
             const newWindow = window.open();
-            newWindow.document.write(code);
+            newWindow.document.write(document.getElementById('source-code').value);
             newWindow.document.close();
         }
-
-        // 5. QR 코드 보기
         function showQRCode() {
             const link = document.getElementById('share-link').value;
             if (!link) return;
-
-            const modal = document.getElementById('qr-modal');
-            const qrImg = document.getElementById('qr-image');
-            
-            // 무료 QR API 사용 (goqr.me)
-            // URL 인코딩 필요
-            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}`;
-            
-            modal.classList.add('modal-active');
+            document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}`;
+            document.getElementById('qr-modal').classList.add('modal-active');
         }
-
-        function closeQRCode(e) {
-            if (e.target.id === 'qr-modal') {
-                e.target.classList.remove('modal-active');
-            }
-        }
+        function closeQRCode(e) { if (e.target.id === 'qr-modal') e.target.classList.remove('modal-active'); }
     </script>
 </body>
 </html>
