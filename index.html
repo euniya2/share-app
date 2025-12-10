@@ -22,6 +22,20 @@
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
         .editor-container { height: calc(100vh - 280px); min-height: 400px; }
+        
+        /* QR 코드 모달 스타일 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-active { display: flex; }
     </style>
 </head>
 <body class="bg-[#0f1117] text-gray-300 min-h-screen flex flex-col">
@@ -77,12 +91,12 @@
             <button onclick="previewCode()" class="px-6 py-2.5 bg-[#2d333b] hover:bg-[#373e47] text-gray-300 rounded border border-gray-600 transition text-sm font-medium">
                 Preview
             </button>
-            <button onclick="generateLink()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-lg transition text-sm font-bold flex items-center justify-center gap-2">
+            <button id="generate-btn" onclick="generateLink()" class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded shadow-lg transition text-sm font-bold flex items-center justify-center gap-2">
                 Generate URL
             </button>
         </div>
 
-        <!-- 결과 링크 표시 영역 (처음엔 숨김) -->
+        <!-- 결과 링크 표시 영역 -->
         <div id="result-area" class="hidden mt-8 border-t border-gray-800 pt-8">
             <div class="bg-[#161b22] border border-gray-700 rounded-lg p-6">
                 <h3 class="text-green-400 font-bold text-lg mb-2">Deploy Success</h3>
@@ -90,23 +104,47 @@
                 
                 <div class="flex items-center gap-0 bg-[#0d1117] border border-gray-600 rounded overflow-hidden mb-4">
                     <input type="text" id="share-link" readonly class="w-full bg-transparent outline-none text-gray-400 text-sm px-4 py-3 code-font">
-                    <button onclick="copyLink()" class="bg-[#21262d] hover:bg-[#30363d] text-white px-6 py-3 text-sm border-l border-gray-600 transition">
+                    <button onclick="copyLink()" class="bg-[#21262d] hover:bg-[#30363d] text-white px-6 py-3 text-sm border-l border-gray-600 transition hover:text-blue-400 whitespace-nowrap">
                         Copy
+                    </button>
+                    <button onclick="showQRCode()" class="bg-[#21262d] hover:bg-[#30363d] text-white px-4 py-3 text-sm border-l border-gray-600 transition hover:text-green-400" title="QR Code">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4h-4v-2h4v-4h6v4zM4 12h8a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2v-8a2 2 0 012-2z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h8a2 2 0 012 2v2H2V6a2 2 0 012-2z" />
+                        </svg>
                     </button>
                 </div>
                 
-                <a id="preview-btn" href="#" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm underline underline-offset-4">
-                    Open in new tab ->
-                </a>
+                <div class="flex justify-between items-center">
+                    <a id="preview-btn" href="#" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm underline underline-offset-4">
+                        Open in new tab ->
+                    </a>
+                    <span class="text-xs text-gray-500">Links are permanent unless hosting changes.</span>
+                </div>
             </div>
         </div>
     </main>
+    
+    <!-- QR 코드 모달 -->
+    <div id="qr-modal" class="modal-overlay" onclick="closeQRCode(event)">
+        <div class="bg-white p-6 rounded-xl shadow-2xl text-center transform scale-100 transition-transform max-w-sm mx-4">
+            <h3 class="text-gray-800 font-bold text-lg mb-4">Scan to View</h3>
+            <div id="qrcode-container" class="bg-gray-100 p-2 rounded mb-4 flex justify-center">
+                <!-- QR 이미지가 여기에 들어갑니다 -->
+                <img id="qr-image" src="" alt="Generating QR..." class="w-48 h-48 object-contain">
+            </div>
+            <p class="text-xs text-gray-500 mb-4 break-all px-2">Scan with your phone camera</p>
+            <button onclick="document.getElementById('qr-modal').classList.remove('modal-active')" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-2 rounded font-medium transition">
+                Close
+            </button>
+        </div>
+    </div>
 
     <footer class="text-center py-6 text-gray-600 text-xs border-t border-gray-800 mt-auto">
         &copy; 2024 Student Developer Platform. All rights reserved.
     </footer>
 
-    <!-- 스크립트 로직 (기능은 동일) -->
+    <!-- 스크립트 로직 -->
     <script>
         // 1. 페이지 로드 및 뷰어 모드 처리
         window.onload = function() {
@@ -189,24 +227,34 @@
                 return;
             }
 
-            const compressed = LZString.compressToEncodedURIComponent(code);
-            const currentUrl = window.location.href.split('?')[0];
-            const fullUrl = `${currentUrl}?data=${compressed}`;
+            const btn = document.getElementById('generate-btn');
+            const originalText = btn.innerHTML;
+            btn.innerText = "Processing...";
+            btn.disabled = true;
 
-            if (fullUrl.length > 10000) {
-                alert("Warning: Code size is too large for a URL.");
-                return;
-            }
+            // 약간의 딜레이를 주어 처리되는 느낌 제공
+            setTimeout(() => {
+                const compressed = LZString.compressToEncodedURIComponent(code);
+                const currentUrl = window.location.href.split('?')[0];
+                const fullUrl = `${currentUrl}?data=${compressed}`;
 
-            const resultArea = document.getElementById('result-area');
-            const linkInput = document.getElementById('share-link');
-            const previewBtn = document.getElementById('preview-btn');
+                if (fullUrl.length > 8000) {
+                    alert("Warning: Code is too long! Some browsers may not open this link.\n(Max recommended: ~8000 chars)");
+                }
 
-            resultArea.classList.remove('hidden');
-            linkInput.value = fullUrl;
-            previewBtn.href = fullUrl;
+                const resultArea = document.getElementById('result-area');
+                const linkInput = document.getElementById('share-link');
+                const previewBtn = document.getElementById('preview-btn');
 
-            resultArea.scrollIntoView({ behavior: 'smooth' });
+                resultArea.classList.remove('hidden');
+                linkInput.value = fullUrl;
+                previewBtn.href = fullUrl;
+
+                resultArea.scrollIntoView({ behavior: 'smooth' });
+                
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 500);
         }
 
         // 3. 복사 버튼
@@ -223,6 +271,27 @@
             const newWindow = window.open();
             newWindow.document.write(code);
             newWindow.document.close();
+        }
+
+        // 5. QR 코드 보기
+        function showQRCode() {
+            const link = document.getElementById('share-link').value;
+            if (!link) return;
+
+            const modal = document.getElementById('qr-modal');
+            const qrImg = document.getElementById('qr-image');
+            
+            // 무료 QR API 사용 (goqr.me)
+            // URL 인코딩 필요
+            qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}`;
+            
+            modal.classList.add('modal-active');
+        }
+
+        function closeQRCode(e) {
+            if (e.target.id === 'qr-modal') {
+                e.target.classList.remove('modal-active');
+            }
         }
     </script>
 </body>
