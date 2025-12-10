@@ -1,21 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-    <title>관리자 페이지</title>
-    <!-- 스타일 생략 -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 페이지 (Admin)</title>
+    <!-- Tailwind CSS (간편한 스타일링) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+    </style>
 </head>
-<body>
-    <h1>학생 작품 목록</h1>
-    <ul id="list"></ul>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
 
+    <!-- 🔐 로그인 오버레이 (초기 실행 시 보임) -->
+    <div id="login-wrapper" class="fixed inset-0 z-50 bg-gray-900 flex items-center justify-center">
+        <div class="bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700 text-center max-w-sm w-full mx-4">
+            <h2 class="text-2xl font-bold text-white mb-2">관리자 접근</h2>
+            <p class="text-gray-400 text-sm mb-6">학생 작품 관리 페이지입니다.</p>
+            
+            <input type="password" id="admin-pw" 
+                class="w-full bg-gray-700 border border-gray-600 rounded px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 mb-4 text-center tracking-widest"
+                placeholder="비밀번호 입력"
+                onkeypress="if(event.key === 'Enter') checkPassword()">
+            
+            <button onclick="checkPassword()" 
+                class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded transition shadow-lg">
+                확인
+            </button>
+            <p id="login-msg" class="text-red-400 text-sm mt-3 h-5"></p>
+        </div>
+    </div>
+
+    <!-- 🚀 메인 관리자 화면 (로그인 후 보임) -->
+    <div id="app-wrapper" style="display: none;" class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
+            <h1 class="text-3xl font-bold text-white">📑 학생 작품 목록</h1>
+            <button onclick="loadList()" class="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded transition">
+                새로고침
+            </button>
+        </header>
+
+        <ul id="list" class="space-y-4">
+            <!-- 자바스크립트로 리스트가 여기에 채워집니다 -->
+            <li class="text-gray-500 text-center py-8">데이터를 불러오는 중...</li>
+        </ul>
+    </div>
+
+    <!-- Firebase 및 로직 스크립트 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, getDocs, deleteDoc, doc, orderBy, query } 
             from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // =========================================================================
-        // [설정 완료] 선생님의 Firebase Key가 적용되었습니다.
-        // =========================================================================
+        // Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyCn907zY1vFfAMNPxyflCOEeJSyd0yKnhs",
             authDomain: "web-class-console.firebaseapp.com",
@@ -24,45 +65,87 @@
             messagingSenderId: "771726293778",
             appId: "1:771726293778:web:e126c7c62ee339f5dfd1cb"
         };
-        // =========================================================================
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 목록 가져오기
-        async function loadList() {
+        // 📋 목록 가져오기 함수 (전역 window 객체에 등록하여 HTML에서 호출 가능하도록 함)
+        window.loadList = async function() {
             const listEl = document.getElementById('list');
-            listEl.innerHTML = "로딩 중...";
+            listEl.innerHTML = '<li class="text-gray-500 text-center py-8">목록을 갱신 중입니다...</li>';
 
-            // 최신순 정렬 쿼리
-            const q = query(collection(db, "pages"), orderBy("createdAt", "desc"));
-            const querySnapshot = await getDocs(q);
+            try {
+                // 최신순(createdAt 내림차순) 정렬
+                const q = query(collection(db, "pages"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
 
-            listEl.innerHTML = ""; // 초기화
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    [${doc.id}] 
-                    <a href="index.html?id=${doc.id}" target="_blank">보기</a>
-                    <button onclick="deleteItem('${doc.id}')">삭제</button>
-                    <br>
-                    <small>${new Date(data.createdAt.seconds * 1000).toLocaleString()}</small>
-                `;
-                listEl.appendChild(li);
-            });
-        }
-        
-        // 전역 함수로 만들기 (모듈 스코프 밖으로 빼기)
-        window.deleteItem = async (id) => {
-            if(confirm("정말 삭제하시겠습니까?")) {
-                await deleteDoc(doc(db, "pages", id));
-                alert("삭제됨");
-                loadList(); // 목록 새로고침
+                listEl.innerHTML = ""; // 초기화
+
+                if (querySnapshot.empty) {
+                    listEl.innerHTML = '<li class="text-gray-500 text-center py-8">등록된 페이지가 없습니다.</li>';
+                    return;
+                }
+
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleString() : '날짜 없음';
+                    
+                    const li = document.createElement('li');
+                    li.className = "bg-gray-800 rounded-lg p-5 border border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-gray-600 transition";
+                    
+                    li.innerHTML = `
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="bg-blue-900 text-blue-200 text-xs px-2 py-0.5 rounded font-mono">ID: ${docSnap.id.slice(0, 8)}...</span>
+                                <span class="text-gray-400 text-xs">${date}</span>
+                            </div>
+                            <a href="index.html?id=${docSnap.id}" target="_blank" class="text-blue-400 font-semibold hover:underline text-lg flex items-center gap-1">
+                                🔗 바로가기 (Click)
+                            </a>
+                        </div>
+                        <button onclick="deleteItem('${docSnap.id}')" 
+                            class="bg-red-900/50 hover:bg-red-600 text-red-200 hover:text-white px-4 py-2 rounded border border-red-800/50 transition text-sm">
+                            삭제하기
+                        </button>
+                    `;
+                    listEl.appendChild(li);
+                });
+            } catch (e) {
+                console.error("Error:", e);
+                listEl.innerHTML = `<li class="text-red-400 text-center">데이터 로딩 실패: ${e.message}</li>`;
             }
         };
 
-        loadList();
+        // 🗑️ 삭제 함수
+        window.deleteItem = async (id) => {
+            if(confirm("정말 이 학생의 작품을 삭제하시겠습니까?\n(복구할 수 없습니다)")) {
+                try {
+                    await deleteDoc(doc(db, "pages", id));
+                    alert("삭제되었습니다.");
+                    window.loadList(); // 목록 새로고침
+                } catch (e) {
+                    alert("삭제 실패: " + e.message);
+                }
+            }
+        };
+
+        // 🔐 비밀번호 확인 함수
+        window.checkPassword = function() {
+            const pwInput = document.getElementById('admin-pw');
+            const msg = document.getElementById('login-msg');
+            
+            if (pwInput.value === '091015') {
+                // 로그인 성공 처리
+                document.getElementById('login-wrapper').style.display = 'none';
+                document.getElementById('app-wrapper').style.display = 'block';
+                // 로그인 성공 시에만 데이터를 불러옵니다 (DB 읽기 절약)
+                window.loadList();
+            } else {
+                msg.innerText = '비밀번호가 틀렸습니다.';
+                pwInput.value = '';
+                pwInput.focus();
+            }
+        };
     </script>
 </body>
 </html>
