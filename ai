@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN 기반 문서 분류 논문 시각화</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+        /* 커스텀 스크롤바 숨김 */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
+
+    <div id="root" class="w-full max-w-6xl"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- 아이콘 컴포넌트 ---
+        const Icon = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        const Play = (props) => <Icon {...props}><polygon points="5 3 19 12 5 21 5 3"></polygon></Icon>;
+        const Pause = (props) => <Icon {...props}><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></Icon>;
+        const RefreshCw = (props) => <Icon {...props}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M16 16h5v5"></path></Icon>;
+        const ArrowRight = (props) => <Icon {...props}><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></Icon>;
+        const ArrowDown = (props) => <Icon {...props}><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></Icon>;
+        const Layers = (props) => <Icon {...props}><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></Icon>;
+        const ScatterChart = (props) => <Icon {...props}><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="18.5" cy="5.5" r=".5" fill="currentColor"/><circle cx="11.5" cy="11.5" r=".5" fill="currentColor"/><circle cx="7.5" cy="16.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="14.5" r=".5" fill="currentColor"/><path d="M3 3v18h18"/></Icon>;
+        const Network = (props) => <Icon {...props}><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"></path><path d="M12 12V8"></path></Icon>;
+        const BarChart2 = (props) => <Icon {...props}><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></Icon>;
+        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></Icon>;
+        const Plus = (props) => <Icon {...props}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></Icon>;
+        const Move = (props) => <Icon {...props}><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></Icon>;
+        const Hash = (props) => <Icon {...props}><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></Icon>;
+        const Calculator = (props) => <Icon {...props}><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="18"></line><path d="M16 10h.01"></path><path d="M12 10h.01"></path><path d="M8 10h.01"></path><path d="M12 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18h.01"></path><path d="M8 18h.01"></path></Icon>;
+        const ChevronsRight = (props) => <Icon {...props}><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></Icon>;
+        const ShoppingBag = (props) => <Icon {...props}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></Icon>;
+        const PieChart = (props) => <Icon {...props}><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></Icon>;
+        const Info = (props) => <Icon {...props}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></Icon>;
+        const BookOpen = (props) => <Icon {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></Icon>;
+
+
+        // --- 메인 컴포넌트 ---
+        const NLPVisualizer = () => {
+            const [view, setView] = useState('process');
+            const [mode, setMode] = useState('bow'); // bow, tfidf, lda, word2vec, doc2vec
+            const [step, setStep] = useState(0);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [isTrained, setIsTrained] = useState(false);
+            
+            // --- View 3 (System) States ---
+            const [sysStep, setSysStep] = useState(0); // 0:Ready, 1:Conv, 2:Pool, 3:Merge, 4:FC
+            const [isSysPlaying, setIsSysPlaying] = useState(false);
+
+            // 중복 단어 포함한 예시 문장 ("인공지능" 2회 등장)
+            const sentence = ["인공지능", "모델", "인공지능", "학습", "예측"];
+            const windowSize = 1;
+
+            // --- 모델별 설명 ---
+            const modeDescriptions = {
+                bow: "✅ Bag-of-Words: 단어의 순서는 무시하고, 오직 '빈도수(Count)'만으로 문서를 표현합니다.",
+                tfidf: "✅ TF-IDF: 전체 문서 집합에서 흔한 단어는 가중치를 낮추고, 특정 문서에만 등장하는 단어는 가중치를 높입니다.",
+                lda: "✅ LDA: 문서는 '주제들의 혼합', 주제는 '단어들의 혼합'이라고 가정하고 확률적으로 주제를 찾습니다.",
+                word2vec: "✅ Word2Vec: 주변 단어들을 통해 단어의 '의미'를 학습하여 벡터 공간에 배치합니다.",
+                doc2vec: "✅ Doc2Vec: 단어뿐만 아니라 '문서 ID'를 함께 학습하여 문서 전체의 맥락을 벡터화합니다."
+            };
+
+            // --- 데이터 정의 ---
+            // TF-IDF 데이터 (인공지능 2회 등장 반영)
+            const tfIdfData = [
+                { word: "인공지능", tf: 2, df: "50개", descDf: "전체 1만 개 중 50개 문서 등장 (희소성 높음)", idf: 2.5, score: 5.0, desc: "현재 문서 빈도(2회) × 전체 희소성(높음) = 핵심어" },
+                { word: "모델", tf: 1, df: "500개", descDf: "전체 1만 개 중 500개 문서 등장 (보통)", idf: 1.2, score: 1.2, desc: "TF(1) × IDF(보통) = 평균 점수" },
+                { word: "인공지능", tf: 2, df: "50개", descDf: "전체 1만 개 중 50개 문서 등장 (희소성 높음)", idf: 2.5, score: 5.0, desc: "현재 문서 빈도(2회) × 전체 희소성(높음) = 핵심어" },
+                { word: "학습", tf: 1, df: "8,000개", descDf: "전체 1만 개 중 8,000개 문서 등장 (매우 흔함)", idf: 0.5, score: 0.5, desc: "대부분의 문서에 등장하여 변별력 없음" },
+                { word: "예측", tf: 1, df: "200개", descDf: "전체 1만 개 중 200개 문서 등장 (조금 희귀)", idf: 1.8, score: 1.8, desc: "TF(1) × IDF(높음) = 비교적 중요" },
+            ];
+
+            // LDA (주제 모델링)
+            const ldaData = [
+                { word: "인공지능", topic: "기술(Tech)", color: "bg-blue-100 border-blue-400 text-blue-800", prob: "85%" },
+                { word: "모델", topic: "기술(Tech)", color: "bg-blue-100 border-blue-400 text-blue-800", prob: "70%" },
+                { word: "인공지능", topic: "기술(Tech)", color: "bg-blue-100 border-blue-400 text-blue-800", prob: "85%" },
+                { word: "학습", topic: "교육(Edu)", color: "bg-green-100 border-green-400 text-green-800", prob: "90%" },
+                { word: "예측", topic: "기술(Tech)", color: "bg-blue-100 border-blue-400 text-blue-800", prob: "60%" },
+            ];
+
+            // 탭 변경 시 상태 초기화
+            useEffect(() => {
+                if (view === 'process') {
+                    setStep(0);
+                    setIsPlaying(false);
+                } else if (view === 'result') {
+                    setIsTrained(false);
+                } else if (view === 'system') {
+                    setSysStep(0);
+                    setIsSysPlaying(false);
+                }
+            }, [view]);
+
+            const getDummyVector = (seed) => {
+                const val1 = (Math.sin(seed) * 0.9).toFixed(2);
+                const val2 = (Math.cos(seed) * 0.9).toFixed(2);
+                return `[${val1}, ${val2}, ...]`;
+            };
+
+            // Process View Auto Play
+            useEffect(() => {
+                let interval;
+                if (isPlaying && view === 'process') {
+                    interval = setInterval(() => {
+                        setStep((prev) => {
+                            if (prev >= sentence.length - 1) {
+                                setIsPlaying(false);
+                                return 0;
+                            }
+                            return prev + 1;
+                        });
+                    }, 2000); 
+                }
+                return () => clearInterval(interval);
+            }, [isPlaying, sentence.length, view]);
+
+            // System View Auto Play
+            useEffect(() => {
+                let interval;
+                if (isSysPlaying && view === 'system') {
+                    interval = setInterval(() => {
+                        setSysStep((prev) => {
+                            if (prev >= 4) {
+                                setIsSysPlaying(false);
+                                return 4;
+                            }
+                            return prev + 1;
+                        });
+                    }, 2500);
+                }
+                return () => clearInterval(interval);
+            }, [isSysPlaying, view]);
+
+            const resetProcess = () => { setStep(0); setIsPlaying(false); };
+            const resetResult = () => { setIsTrained(false); };
+            const resetSystem = () => { setSysStep(0); setIsSysPlaying(false); };
+
+            const getContextIndices = (currentIndex) => {
+                const indices = [];
+                for (let i = currentIndex - windowSize; i <= currentIndex + windowSize; i++) {
+                    if (i >= 0 && i < sentence.length && i !== currentIndex) indices.push(i);
+                }
+                return indices;
+            };
+
+            const contextIndices = getContextIndices(step);
+
+            // 데이터 셋
+            const wordVectors = [
+                { word: "인공지능", pattern: [0.8, 0.2, 0.1, 0.9, 0.3] },
+                { word: "모델", pattern: [0.2, 0.7, 0.8, 0.1, 0.4] },
+                { word: "언어", pattern: [0.1, 0.3, 0.9, 0.2, 0.8] },
+                { word: "학습", pattern: [0.9, 0.1, 0.2, 0.8, 0.3] },
+                { word: "예측", pattern: [0.3, 0.4, 0.1, 0.7, 0.2] },
+            ];
+
+            const categories = [
+                "건강의학/질병", "경제금융/은행", "과학/자연과학", "스포츠/야구", "공연/방송연예", 
+                "종교/불교", "사회질서/군대", "산업건설/토목", "산업제조/컴퓨터", "여가/여행관광"
+            ];
+
+            const results = [
+                { name: "TF-IDF + CNN", accuracy: 76.2, color: "bg-slate-400" },
+                { name: "Word2Vec + CNN", accuracy: 82.1, color: "bg-blue-400" },
+                { name: "제안 모델 (W2V+D2V)", accuracy: 83.2, color: "bg-indigo-600" },
+            ];
+
+            // 벡터 공간 데이터 (인공지능 2개 포함)
+            const currentWordPositions = isTrained 
+                ? [
+                    { id: 1, label: "인공지능", x: 20, y: 30, group: "tech" },
+                    { id: 2, label: "모델", x: 35, y: 25, group: "tech" },
+                    { id: 3, label: "데이터", x: 25, y: 15, group: "tech" },
+                    { id: 4, label: "언어", x: 70, y: 80, group: "lang" },
+                    { id: 5, label: "학습", x: 85, y: 75, group: "process" },
+                    { id: 6, label: "예측", x: 75, y: 65, group: "process" },
+                  ]
+                : [
+                    { id: 1, label: "인공지능", x: 10, y: 80, group: "tech" },
+                    { id: 2, label: "모델", x: 90, y: 15, group: "tech" },
+                    { id: 3, label: "데이터", x: 40, y: 90, group: "tech" },
+                    { id: 4, label: "언어", x: 20, y: 20, group: "lang" },
+                    { id: 5, label: "학습", x: 80, y: 80, group: "process" },
+                    { id: 6, label: "예측", x: 60, y: 10, group: "process" },
+                  ];
+
+            const currentDocPositions = isTrained
+                ? [
+                    { id: 'd1', label: "문서A(IT기술)", x: 10, y: 50, type: 'doc' }, 
+                    { id: 'd2', label: "문서B(교육학)", x: 90, y: 50, type: 'doc' }, 
+                  ]
+                : [
+                    { id: 'd1', label: "문서A(IT기술)", x: 30, y: 50, type: 'doc' }, 
+                    { id: 'd2', label: "문서B(교육학)", x: 70, y: 50, type: 'doc' }, 
+                  ];
+
+            const arrowStyle = "text-slate-300 shrink-0";
+
+            return (
+                <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col w-full border border-slate-200">
+                    
+                    {/* Header */}
+                    <div className="bg-indigo-700 p-4 text-white text-center">
+                        <h1 className="text-xl md:text-2xl font-bold">CNN 기반 문서 분류 논문 시각화</h1>
+                        <p className="opacity-80 text-sm">Word2Vec & Doc2Vec 결합 모델 시스템 구조</p>
+                    </div>
+
+                    {/* Navigation */}
+                    <div className="flex border-b border-slate-200 overflow-x-auto">
+                        {[
+                            { id: 'process', icon: Layers, label: '1. 학습 구조' },
+                            { id: 'result', icon: ScatterChart, label: '2. 벡터 공간' },
+                            { id: 'system', icon: Network, label: '3. 시스템 구조 (제안)' },
+                            { id: 'experiment', icon: BarChart2, label: '4. 실험 결과' }
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setView(tab.id)}
+                                className={`flex-1 py-3 px-2 text-center text-xs md:text-sm font-bold flex items-center justify-center gap-1 whitespace-nowrap transition-colors
+                                    ${view === tab.id ? 'text-indigo-700 border-b-2 border-indigo-700 bg-indigo-50' : 'text-slate-500 hover:bg-slate-50'}`}
+                            >
+                                <tab.icon size={14} /> {tab.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="p-4 bg-white min-h-[550px]">
+                        
+                        {/* === VIEW 1: 학습 구조 === */}
+                        {view === 'process' && (
+                            <div className="flex flex-col items-center w-full animate-fade-in">
+                                <div className="flex flex-col gap-2 w-full mb-6 max-w-4xl">
+                                    <div className="flex flex-wrap bg-slate-100 p-1 rounded-lg w-full justify-center">
+                                        {['bow', 'tfidf', 'lda', 'word2vec', 'doc2vec'].map((m, idx) => (
+                                            <button key={m} onClick={() => { setMode(m); resetProcess(); }} 
+                                                className={`px-3 py-1.5 rounded text-xs font-bold transition-all mx-0.5 my-0.5
+                                                ${mode === m 
+                                                    ? (m === 'bow' ? 'bg-white text-orange-600 shadow' 
+                                                    : m === 'tfidf' ? 'bg-white text-teal-600 shadow'
+                                                    : m === 'lda' ? 'bg-white text-green-600 shadow'
+                                                    : m === 'word2vec' ? 'bg-white text-blue-600 shadow'
+                                                    : 'bg-white text-purple-700 shadow') 
+                                                    : 'text-slate-500 hover:bg-white hover:shadow-sm'}`}>
+                                                {idx + 1}. {m === 'bow' ? 'Bag-of-Words' : m === 'tfidf' ? 'TF-IDF' : m === 'lda' ? 'LDA' : m === 'word2vec' ? 'Word2Vec' : 'Doc2Vec'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    
+                                    {/* 한줄 설명 */}
+                                    <div className="bg-slate-50 border border-slate-200 rounded px-3 py-2 text-center">
+                                        <p className="text-xs text-slate-600 break-keep">{modeDescriptions[mode]}</p>
+                                    </div>
+
+                                    <div className="flex gap-2 justify-center mt-2">
+                                        <button onClick={() => setIsPlaying(!isPlaying)} className="flex-1 bg-indigo-600 text-white rounded px-3 py-2 text-xs font-bold flex items-center justify-center gap-1 hover:bg-indigo-700 max-w-xs">
+                                            {isPlaying ? <Pause size={12} /> : <Play size={12} />} {isPlaying ? '정지' : '자동 재생'}
+                                        </button>
+                                        <button onClick={() => setStep(prev => Math.min(prev + 1, sentence.length - 1))} className="bg-white border border-slate-300 text-slate-700 rounded px-3 py-2 text-xs font-bold flex items-center gap-1" disabled={step >= sentence.length - 1}><ArrowRight size={12} /> 단계</button>
+                                        <button onClick={resetProcess} className="bg-white border border-slate-300 text-slate-700 rounded px-3 py-2" title="초기화"><RefreshCw size={12} /></button>
+                                    </div>
+                                </div>
+
+                                {/* Sliding Window / Scanner */}
+                                <div className="w-full overflow-x-auto pb-6 mb-6 border-b border-slate-100 scrollbar-hide">
+                                    <div className="min-w-full w-fit flex justify-center px-4 pt-2">
+                                        <div className="flex gap-3">
+                                            {sentence.map((word, idx) => {
+                                                const isCurrent = idx === step;
+                                                const isContext = contextIndices.includes(idx);
+                                                
+                                                // Style per mode
+                                                let style = "bg-white border-slate-200 text-slate-400";
+                                                let badge = null;
+
+                                                if (mode === 'bow') {
+                                                    if (isCurrent) { style = "bg-orange-50 border-orange-400 text-orange-700 font-bold ring-2 ring-orange-100 scale-105"; badge = "Count +1"; }
+                                                } else if (mode === 'tfidf') {
+                                                    if (isCurrent) { style = "bg-teal-50 border-teal-400 text-teal-700 font-bold ring-2 ring-teal-100 scale-105"; badge = "Calc"; }
+                                                } else if (mode === 'lda') {
+                                                    if (isCurrent) { style = "bg-green-50 border-green-400 text-green-700 font-bold ring-2 ring-green-100 scale-105"; badge = "Topic?"; }
+                                                } else { // W2V, D2V
+                                                    if (isCurrent) { style = "bg-red-50 border-red-400 text-red-600 font-bold ring-2 ring-red-200"; badge = "Target"; }
+                                                    else if (isContext) { style = "bg-blue-50 border-blue-400 text-blue-600 font-bold"; badge = "Context"; }
+                                                }
+
+                                                return (
+                                                    <div key={idx} className={`px-4 py-3 rounded-lg border text-sm whitespace-nowrap transition-all duration-300 flex-shrink-0 ${style}`}>
+                                                        {word}
+                                                        {badge && <div className={`text-[10px] text-center font-bold mt-1 ${mode==='bow'?'text-orange-600':mode==='tfidf'?'text-teal-600':mode==='lda'?'text-green-600':mode.includes('vec') && badge==='Target'?'text-red-500':'text-blue-500'}`}>{badge}</div>}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Diagram Container */}
+                                <div className="w-full max-w-lg bg-slate-50 rounded-lg border border-slate-200 p-6 flex flex-col items-center min-h-[320px] justify-center transition-all duration-300">
+                                    
+                                    {/* --- 1. Bag-of-Words View --- */}
+                                    {mode === 'bow' && (
+                                        <div className="flex flex-col items-center w-full animate-fade-in">
+                                            <div className="w-full text-center mb-6">
+                                                <span className="text-xs font-bold text-slate-500 flex items-center justify-center gap-1"><ShoppingBag size={14} /> 단어 빈도수 세기 (Bag-of-Words)</span>
+                                            </div>
+                                            <div className="flex items-center gap-8">
+                                                <div className="relative">
+                                                    <ShoppingBag size={80} className="text-orange-200" />
+                                                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-orange-600 font-bold text-xs text-center">단어 가방<br/>(Bag)</div>
+                                                </div>
+                                                <div className="bg-white p-4 rounded-lg shadow-sm border border-orange-200 w-48">
+                                                    <h4 className="text-xs font-bold text-orange-800 mb-2 border-b pb-1">단어 사전 (Count)</h4>
+                                                    <ul className="text-xs space-y-1">
+                                                        {/* 중복 제거한 단어 리스트로 표시 */}
+                                                        {["인공지능", "모델", "학습", "예측", "언어"].map((w, i) => {
+                                                            // 현재 스텝까지 등장한 횟수 계산
+                                                            const currentCount = sentence.slice(0, step + 1).filter(s => s === w).length;
+                                                            // 최종 횟수 (인공지능 2, 나머지 1)
+                                                            const isHighlighted = sentence[step] === w;
+                                                            return (
+                                                                <li key={i} className={`flex justify-between ${isHighlighted ? 'text-slate-800 font-bold' : 'text-slate-400'}`}>
+                                                                    <span>{w}</span>
+                                                                    <span className={`bg-orange-100 px-1.5 rounded ${isHighlighted ? 'text-orange-600 scale-110 transition-transform' : 'text-orange-400'}`}>
+                                                                        {currentCount}
+                                                                    </span>
+                                                                </li>
+                                                            );
+                                                        })}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <p className="text-[10px] text-slate-400 mt-4 text-center">순서는 무시하고, 가방 안에 단어가 몇 번 들어있는지만 셉니다.</p>
+                                        </div>
+                                    )}
+
+                                    {/* --- 2. TF-IDF View --- */}
+                                    {mode === 'tfidf' && (
+                                        <div className="flex flex-col items-center w-full animate-fade-in">
+                                            <div className="w-full text-center mb-6">
+                                                <span className="text-xs font-bold text-slate-500 flex items-center justify-center gap-1"><Calculator size={14} /> 통계적 가중치 계산 (가정: 총 1만 문서)</span>
+                                            </div>
+                                            
+                                            <div className="w-full bg-white border border-teal-200 rounded-lg p-4 shadow-sm mb-6 flex flex-col items-center relative overflow-hidden">
+                                                <div className="absolute top-0 left-0 w-1 h-full bg-teal-500"></div>
+                                                <h4 className="text-lg font-bold text-slate-800 mb-1">"{sentence[step]}"</h4>
+                                                <p className="text-xs text-slate-500 mb-4 bg-slate-100 px-2 py-1 rounded">{tfIdfData[step].desc}</p>
+                                                
+                                                <div className="flex flex-wrap justify-center items-center gap-2 text-sm">
+                                                    <div className="flex flex-col items-center bg-slate-50 p-2 rounded w-22 border border-slate-100">
+                                                        <span className="text-[10px] text-slate-400 mb-1">현재 문서 빈도(TF)</span>
+                                                        <span className="font-bold text-slate-700">{tfIdfData[step].tf}</span>
+                                                    </div>
+                                                    <span className="text-slate-400">×</span>
+                                                    <div className="flex flex-col items-center bg-slate-50 p-2 rounded w-32 border border-slate-100" title={`1만 개 문서 중 ${tfIdfData[step].df} 등장`}>
+                                                        <span className="text-[10px] text-slate-400 mb-1">희소성(IDF)</span>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="font-bold text-teal-600">{tfIdfData[step].idf}</span>
+                                                            <span className="text-[9px] text-slate-400">({tfIdfData[step].descDf})</span>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-slate-400">=</span>
+                                                    <div className="flex flex-col items-center bg-teal-50 border border-teal-200 p-2 rounded w-20">
+                                                        <span className="text-[10px] text-teal-600 mb-1">최종 가중치</span>
+                                                        <span className="font-bold text-teal-700">{tfIdfData[step].score}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Vector Visual */}
+                                            <div className="w-full">
+                                                <p className="text-[10px] text-slate-400 mb-1 text-center">희소 벡터 (Sparse Vector) 표현 - 중요 단어일수록 높음</p>
+                                                <div className="flex gap-1 h-12 w-full justify-center bg-slate-100 rounded p-1 items-end border border-slate-200">
+                                                    {tfIdfData.map((d, i) => (
+                                                        <div key={i} className="flex-1 rounded-sm relative group h-full flex flex-col justify-end items-center">
+                                                            <div 
+                                                                className={`w-4/5 ${i === step ? 'bg-teal-500' : 'bg-slate-300'} transition-all duration-500 rounded-t-sm`} 
+                                                                style={{ height: `${(d.score / 5.0) * 100}%` }}
+                                                            ></div>
+                                                            <span className="text-[8px] text-slate-500 mt-1 truncate w-full text-center">{d.word}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* --- 3. LDA View --- */}
+                                    {mode === 'lda' && (
+                                        <div className="flex flex-col items-center w-full animate-fade-in">
+                                            <div className="w-full text-center mb-2">
+                                                <span className="text-xs font-bold text-slate-500 flex items-center justify-center gap-1"><PieChart size={14} /> 잠재 디리클레 할당 (Topic Modeling)</span>
+                                            </div>
+                                            
+                                            <div className="bg-orange-50 border border-orange-200 p-3 rounded-lg text-xs text-orange-800 mb-4 w-full break-keep text-center">
+                                                <span className="font-bold">💡 왜 필요한가?</span> 정답이 없는 수많은 문서들 속에서 숨겨진 '주제'를 자동으로 찾아내기 위함.<br/>
+                                                <span className="font-bold">⚙️ 동작 원리:</span> 문서는 여러 '주제'가 섞여 있고, 각 주제는 특정 '단어'들이 섞여 있다고 가정하여 확률을 계산함.
+                                            </div>
+
+                                            <div className="flex justify-center gap-4 w-full items-center mb-4">
+                                                {/* Document Topic Mix */}
+                                                <div className="flex flex-col items-center">
+                                                    <div className="w-16 h-20 border-2 border-slate-300 bg-white relative flex flex-col">
+                                                        <div className="bg-blue-200 h-[60%] w-full flex items-center justify-center text-[10px] text-blue-800 font-bold">기술 60%</div>
+                                                        <div className="bg-green-200 h-[40%] w-full flex items-center justify-center text-[10px] text-green-800 font-bold">교육 40%</div>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-500 mt-1">이 문서의 주제 분포</span>
+                                                </div>
+
+                                                <ArrowRight size={20} className="text-slate-300" />
+
+                                                {/* Current Word Assignment */}
+                                                <div className="flex flex-col items-center">
+                                                    <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center transition-all ${ldaData[step].topic.includes('Tech') ? 'border-blue-300 bg-blue-50' : 'border-green-300 bg-green-50'}`}>
+                                                        <span className={`text-xs font-bold text-center ${ldaData[step].topic.includes('Tech') ? 'text-blue-700' : 'text-green-700'}`}>
+                                                            {ldaData[step].word}<br/>
+                                                            ⬇<br/>
+                                                            {ldaData[step].topic}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-500 mt-1">단어별 주제 할당</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* --- 4 & 5. Word2Vec / Doc2Vec View --- */}
+                                    {(mode === 'word2vec' || mode === 'doc2vec') && (
+                                        <div className="flex flex-col items-center w-full animate-fade-in">
+                                            <div className="w-full text-center mb-4">
+                                                <span className="text-xs font-bold text-slate-500 flex items-center justify-center gap-1"><Hash size={12} /> 임베딩 룩업 (글자 → 의미 벡터)</span>
+                                            </div>
+                                            <div className="flex gap-2 items-start mb-6 justify-center w-full">
+                                                {mode === 'doc2vec' && (
+                                                    <div className="flex flex-col items-center shrink-0">
+                                                        <div className="w-12 h-14 bg-purple-100 border-2 border-purple-500 rounded flex items-center justify-center shadow-md z-10 mb-1">
+                                                            <span className="text-xl font-bold text-purple-700">D</span>
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-slate-500">문서ID</span>
+                                                        <div className="mt-1 bg-slate-800 text-green-400 text-[8px] px-1 py-0.5 rounded font-mono">{getDummyVector(99)}</div>
+                                                    </div>
+                                                )}
+                                                {contextIndices.map((idx) => (
+                                                    <div key={idx} className="flex flex-col items-center shrink-0">
+                                                        <div className="w-12 h-12 bg-blue-100 border-2 border-blue-500 rounded flex items-center justify-center shadow-md z-10 mb-1">
+                                                            <span className="text-sm font-bold text-blue-700">W</span>
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-slate-500 truncate max-w-[40px] text-center">{sentence[idx]}</span>
+                                                        <div className="mt-1 bg-slate-800 text-green-400 text-[8px] px-1 py-0.5 rounded font-mono">{getDummyVector(idx)}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="w-full bg-indigo-100 border-2 border-indigo-400 rounded p-2 flex items-center justify-center mb-6 relative shadow-inner">
+                                                <span className="text-indigo-800 font-bold text-xs">Average / Concat (벡터 결합)</span>
+                                            </div>
+                                            <div className="w-32 h-12 bg-white border-2 border-slate-800 rounded flex items-center justify-center shadow-lg mb-2 relative z-10">
+                                                <span className="text-red-600 font-bold">{sentence[step]}</span>
+                                            </div>
+                                            <div className="text-xs text-slate-400">Softmax (확률 예측)</div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* === VIEW 2: 벡터 공간 === */}
+                        {view === 'result' && (
+                            <div className="flex flex-col items-center w-full animate-fade-in">
+                                <div className="flex bg-slate-100 p-1 rounded-lg w-full max-w-xs mb-4">
+                                    <button onClick={() => { setMode('doc2vec'); resetResult(); }} className={`flex-1 py-1 rounded text-xs font-bold transition-all ${mode === 'doc2vec' ? 'bg-white text-purple-700 shadow' : 'text-slate-500'}`}>Doc2Vec</button>
+                                    <button onClick={() => { setMode('word2vec'); resetResult(); }} className={`flex-1 py-1 rounded text-xs font-bold transition-all ${mode === 'word2vec' ? 'bg-white text-blue-600 shadow' : 'text-slate-500'}`}>Word2Vec</button>
+                                </div>
+
+                                <div className="relative w-full aspect-square max-w-md bg-slate-50 rounded-xl border border-slate-200 shadow-inner mb-6 overflow-hidden">
+                                    <div className="absolute left-4 bottom-4 w-[90%] h-px bg-slate-400"></div>
+                                    <div className="absolute left-4 bottom-4 w-px h-[90%] bg-slate-400"></div>
+                                    <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 rounded border text-xs font-bold shadow-sm z-20">
+                                        {isTrained ? <span className="text-indigo-600">학습 후</span> : <span className="text-slate-400">학습 전</span>}
+                                    </div>
+
+                                    {/* 군집 배경 (Word2Vec) */}
+                                    {isTrained && mode === 'word2vec' && (
+                                        <>
+                                            <div className="absolute rounded-full border-2 border-blue-300 bg-blue-100 opacity-40 transition-all duration-[2000ms]" style={{ left: '25%', top: '75%', width: '150px', height: '150px', transform: 'translate(-50%, -50%)' }}></div>
+                                            <div className="absolute rounded-full border-2 border-green-300 bg-green-100 opacity-40 transition-all duration-[2000ms]" style={{ left: '80%', top: '25%', width: '150px', height: '150px', transform: 'translate(-50%, -50%)' }}></div>
+                                        </>
+                                    )}
+
+                                    {/* 단어 노드 */}
+                                    {currentWordPositions.map((pos) => {
+                                        let color = "bg-slate-400";
+                                        if (isTrained) {
+                                            if (pos.group === 'tech') color = "bg-blue-500";
+                                            if (pos.group === 'process') color = "bg-green-500";
+                                            if (pos.group === 'lang') color = "bg-green-500";
+                                        }
+                                        return (
+                                            <div key={pos.id} className="absolute flex flex-col items-center transition-all duration-[2000ms] ease-in-out z-10" style={{ left: `${pos.x}%`, top: `${100 - pos.y}%`, transform: 'translate(-50%, -50%)' }}>
+                                                <div className={`w-3 h-3 rounded-full shadow-sm ${color} ring-2 ring-white`}></div>
+                                                <span className={`mt-1 text-[10px] font-bold whitespace-nowrap px-1.5 rounded bg-white/80 ${isTrained ? 'text-slate-800' : 'text-slate-400'}`}>{pos.label}</span>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {/* 문서 노드 (Doc2Vec) */}
+                                    {mode === 'doc2vec' && currentDocPositions.map((pos) => (
+                                        <div key={pos.id} className="absolute flex flex-col items-center transition-all duration-[2000ms] ease-in-out z-20" style={{ left: `${pos.x}%`, top: `${100 - pos.y}%`, transform: 'translate(-50%, -50%)' }}>
+                                            <div className="w-4 h-4 bg-purple-600 border-2 border-white shadow-md flex items-center justify-center transform rotate-45"><div className="w-1.5 h-1.5 bg-white rounded-full"></div></div>
+                                            <span className="mt-2 text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 whitespace-nowrap shadow-sm">{pos.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="flex gap-4">
+                                    <button onClick={() => setIsTrained(false)} className="px-6 py-2 rounded-lg font-bold border bg-white border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors">초기화</button>
+                                    <button onClick={() => setIsTrained(true)} className="px-6 py-2 rounded-lg font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg transition-all flex items-center gap-2"><Move size={16} /> 학습 시작</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* === VIEW 3: 시스템 구조 === */}
+                        {view === 'system' && (
+                            <div className="flex flex-col items-center w-full animate-fade-in">
+                                <div className="w-full max-w-4xl text-center mb-8">
+                                    <h3 className="text-lg font-bold text-slate-800 mb-1">제안 시스템 구조 (CNN 통합)</h3>
+                                    <p className="text-sm text-slate-500">왼쪽(입력)에서 오른쪽(출력)으로 데이터가 흐르며 특징을 추출하고 분류합니다.</p>
+                                </div>
+
+                                <div className="w-full overflow-x-auto pb-6">
+                                    <div className="min-w-[900px] flex gap-4 p-6 bg-slate-50 border border-slate-200 rounded-xl relative">
+                                        
+                                        {/* 1. 단어의미벡터 */}
+                                        <div className="flex flex-col items-center min-w-[200px] px-2 flex-1">
+                                            <div className="w-full text-center border-b-2 border-slate-200 pb-2 mb-6">
+                                                <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded border border-slate-200">1. 단어의미벡터</span>
+                                            </div>
+                                            <div className="flex-1 flex flex-col justify-center items-center w-full h-[350px]">
+                                                <div className={`flex flex-col gap-2 w-full transition-all duration-500 ${sysStep >= 0 ? 'opacity-100' : 'opacity-0'}`}>
+                                                    {wordVectors.map((wv, idx) => (
+                                                        <div key={idx} className="flex items-center gap-2 justify-center w-full">
+                                                            <span className="text-[10px] font-bold text-slate-600 w-12 text-right truncate">{wv.word}</span>
+                                                            <div className="flex gap-0.5 bg-blue-50 p-1 rounded border border-blue-200 relative shrink-0">
+                                                                {wv.pattern.map((val, pIdx) => (
+                                                                    <div key={pIdx} className="w-3 h-3 rounded-[1px] transition-colors duration-300" style={{ backgroundColor: `rgba(59, 130, 246, ${val})` }} />
+                                                                ))}
+                                                                {sysStep === 1 && idx >= 1 && idx <= 3 && (
+                                                                    <div className="absolute inset-0 border-2 border-red-500 rounded bg-red-500/10 z-10 animate-pulse"></div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <span className="text-[10px] text-slate-400 mt-3 font-medium">2차원 행렬 (로컬 정보)</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-center"><ArrowRight className={arrowStyle} size={24} /></div>
+
+                                        {/* 2. 컨볼루션층 */}
+                                        <div className="flex flex-col items-center min-w-[160px] px-2 flex-1">
+                                            <div className="w-full text-center border-b-2 border-slate-200 pb-2 mb-6">
+                                                <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded border border-slate-200">2. 컨볼루션층</span>
+                                            </div>
+                                            <div className="flex-1 flex items-center justify-center w-full h-[350px]">
+                                                <div className={`flex flex-col items-center transition-all duration-500 ${sysStep >= 1 ? 'opacity-100' : 'opacity-30'}`}>
+                                                    <span className="text-[10px] text-indigo-600 font-bold mb-2">Feature Map</span>
+                                                    <div className="bg-indigo-50 border border-indigo-300 p-2 rounded space-y-1">
+                                                        {[0.9, 0.2, 0.8].map((val, i) => (
+                                                            <div key={i} className="flex gap-0.5">
+                                                                {[...Array(5)].map((_, j) => (
+                                                                    <div key={j} className="w-3 h-3 rounded-[1px] transition-all duration-500" style={{ backgroundColor: sysStep >= 1 ? `rgba(99, 102, 241, ${val > 0.5 ? val : 0.2})` : '#e0e7ff', transform: sysStep >= 1 && val > 0.5 ? 'scale(1.1)' : 'scale(1)' }}></div>
+                                                                ))}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-400 mt-2">패턴 추출</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-center"><ArrowRight className={arrowStyle} size={24} /></div>
+
+                                        {/* 3. 풀링층 */}
+                                        <div className="flex flex-col items-center min-w-[120px] px-2 flex-1">
+                                            <div className="w-full text-center border-b-2 border-slate-200 pb-2 mb-6">
+                                                <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded border border-slate-200">3. 풀링층</span>
+                                            </div>
+                                            <div className="flex-1 flex items-center justify-center w-full h-[350px]">
+                                                <div className={`flex flex-col items-center transition-all duration-500 ${sysStep >= 2 ? 'opacity-100' : 'opacity-30'}`}>
+                                                    <span className="text-[10px] text-red-600 font-bold mb-2">Max Pooling</span>
+                                                    <div className="bg-red-50 border border-red-300 p-2 rounded flex flex-col gap-1 w-14 items-center">
+                                                        <div className="w-full h-3 bg-red-500 rounded-[1px] opacity-90"></div>
+                                                        <div className="w-full h-3 bg-red-400 rounded-[1px] opacity-70"></div>
+                                                        <div className="w-full h-3 bg-red-600 rounded-[1px] opacity-100"></div>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-400 mt-2">핵심 압축</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-center"><ArrowRight className={arrowStyle} size={24} /></div>
+
+                                        {/* 4. 완전 연결층 */}
+                                        <div className="flex flex-col items-center min-w-[240px] px-2 flex-1">
+                                            <div className="w-full text-center border-b-2 border-slate-200 pb-2 mb-6">
+                                                <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded border border-slate-200">4. 완전 연결층</span>
+                                            </div>
+                                            <div className="flex-1 flex flex-col items-center justify-center w-full h-[350px] relative">
+                                                {/* Doc2Vec Input */}
+                                                <div className={`flex flex-col items-center mt-2 mb-2 transition-all duration-500 ${sysStep >= 0 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+                                                    <div className="bg-purple-100 border border-purple-500 p-1.5 rounded flex flex-col items-center shadow-sm w-36">
+                                                        <span className="text-[10px] font-bold text-purple-700 mb-1">문서 순서 벡터</span>
+                                                        <div className="flex gap-0.5 w-full justify-center mb-1">
+                                                            {[0.8, 0.6, 0.9, 0.4, 0.7].map((val, i) => (
+                                                                <div key={i} className="w-3 h-3 bg-purple-500 rounded-[1px]" style={{ opacity: val }}></div>
+                                                            ))}
+                                                        </div>
+                                                        <span className="text-[8px] text-purple-600 font-medium">1차원 벡터 (글로벌)</span>
+                                                    </div>
+                                                    <div className="flex flex-col items-center -mb-2">
+                                                        <div className={`w-0.5 bg-purple-300 h-6 transition-opacity duration-500 ${sysStep >= 3 ? 'opacity-100' : 'opacity-30'}`}></div>
+                                                        <ArrowDown size={16} className={`text-purple-300 transition-opacity duration-500 ${sysStep >= 3 ? 'opacity-100' : 'opacity-30'}`} />
+                                                    </div>
+                                                </div>
+
+                                                {/* Merge & Output */}
+                                                <div className="flex flex-col items-center justify-center flex-1 w-full gap-2">
+                                                    <div className={`transition-all duration-500 flex flex-col items-center justify-center ${sysStep >= 3 ? 'opacity-100 scale-100' : 'opacity-30 scale-90'}`}>
+                                                        <div className="bg-slate-100 p-1.5 rounded-full border border-slate-300 mb-1 relative z-10 shadow-sm"><Plus size={16} className="text-slate-500" /></div>
+                                                        <div className="bg-white border-2 border-slate-600 p-2 rounded flex flex-col items-center shadow-md w-32">
+                                                            <span className="text-[10px] font-bold text-slate-600 mb-1">결합 벡터 (Merge)</span>
+                                                            <div className="flex w-full h-5 border border-slate-200 rounded overflow-hidden">
+                                                                <div className="w-1/2 bg-red-100 flex items-center justify-center h-full"><div className="w-full h-full bg-red-500 opacity-80"></div></div>
+                                                                <div className="w-1/2 bg-purple-100 flex items-center justify-center h-full"><div className="w-full h-full bg-purple-500 opacity-80"></div></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <ArrowDown size={16} className={`text-slate-300 transition-opacity duration-500 ${sysStep >= 4 ? 'opacity-100' : 'opacity-30'}`} />
+                                                    <div className={`transition-all duration-500 ${sysStep >= 4 ? 'opacity-100 translate-y-0' : 'opacity-30 -translate-y-2'}`}>
+                                                        <div className="bg-white border-2 border-green-500 p-2 rounded-lg shadow-lg flex flex-col items-center w-32">
+                                                            <span className="text-[10px] text-slate-400 mb-1">Softmax</span>
+                                                            <div className="text-sm font-bold text-green-700 bg-green-50 px-3 py-1 rounded w-full text-center">IT 뉴스 (98%)</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-4 mt-6">
+                                    <button onClick={resetSystem} className="px-6 py-2 rounded-lg font-bold border bg-white border-slate-300 text-slate-600 hover:bg-slate-50 transition-colors">초기화</button>
+                                    <button onClick={() => setIsSysPlaying(!isSysPlaying)} className="px-6 py-2 rounded-lg font-bold bg-slate-800 text-white hover:bg-slate-700 shadow-lg transition-all flex items-center gap-2">
+                                        {isSysPlaying ? <Pause size={16} /> : <Play size={16} />} {isSysPlaying ? '멈춤' : '구조 흐름 재생'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* === VIEW 4: 실험 결과 === */}
+                        {view === 'experiment' && (
+                            <div className="flex flex-col items-center w-full animate-fade-in">
+                                <div className="w-full max-w-4xl text-center mb-8">
+                                    <h3 className="text-lg font-bold text-slate-800 mb-2">실험 결과 및 성능 비교</h3>
+                                    <p className="text-sm text-slate-500">한국일보-20000 데이터셋을 이용한 10개 범주 분류 실험 결과입니다.</p>
+                                </div>
+
+                                <div className="w-full flex flex-col md:flex-row gap-6 max-w-4xl justify-center">
+                                    <div className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-6">
+                                        <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><CheckCircle size={16} className="text-indigo-600" /> 실험 데이터 범주 (10개)</h4>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {categories.map((cat, i) => (
+                                                <div key={i} className="text-xs text-slate-600 bg-white px-3 py-2 rounded border border-slate-100 shadow-sm flex items-center">
+                                                    <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full mr-2"></div>{cat}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col">
+                                        <h4 className="text-sm font-bold text-slate-700 mb-6 flex items-center gap-2"><BarChart2 size={16} className="text-indigo-600" /> 정확도 비교 (Accuracy)</h4>
+                                        <div className="flex-1 flex flex-col justify-end gap-4 pb-2">
+                                            {results.map((res, i) => (
+                                                <div key={i} className="w-full">
+                                                    <div className="flex justify-between text-xs mb-1">
+                                                        <span className={`font-bold ${i===2 ? 'text-indigo-700' : 'text-slate-600'}`}>{res.name}</span>
+                                                        <span className={`font-bold ${i===2 ? 'text-indigo-700' : 'text-slate-500'}`}>{res.accuracy}%</span>
+                                                    </div>
+                                                    <div className="w-full h-6 bg-slate-100 rounded-full overflow-hidden relative">
+                                                        <div className={`h-full ${res.color} rounded-full transition-all duration-1000 ease-out`} style={{ width: `${res.accuracy}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 text-center mt-4">* 제안 모델(W2V+D2V)이 가장 높은 정확도를 보임 (+1.4%p)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<NLPVisualizer />);
+    </script>
+</body>
+</html>
