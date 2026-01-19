@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>생태계를 지키는 디지털 히어로</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0fdf4; /* Light Green Background */
+        }
+        .title-font {
+            font-family: 'Jua', sans-serif;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .modal-enter {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        /* Custom scrollbar for modal content */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Header Section -->
+    <header class="bg-green-600 text-white py-8 px-4 shadow-lg relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full opacity-10">
+            <i class="fas fa-leaf absolute top-10 left-10 text-6xl"></i>
+            <i class="fas fa-tree absolute bottom-10 right-10 text-8xl"></i>
+            <i class="fas fa-cloud absolute top-5 right-20 text-5xl"></i>
+        </div>
+        <div class="container mx-auto text-center relative z-10">
+            <h1 class="text-3xl md:text-5xl title-font mb-4">🌿 생태계를 지키는 디지털 히어로 🤖</h1>
+            <p class="text-lg md:text-xl opacity-90">우리가 직접 볼 수 없는 곳, 자연을 지키는 기술들을 만나보세요!</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12">
+        
+        <!-- Introduction -->
+        <div class="bg-white rounded-2xl p-6 mb-12 shadow-sm border-l-8 border-green-500 max-w-4xl mx-auto">
+            <div class="flex items-start space-x-4">
+                <div class="text-green-500 text-3xl"><i class="fas fa-quote-left"></i></div>
+                <div>
+                    <h2 class="text-xl font-bold mb-2">선생님의 말씀</h2>
+                    <p class="text-gray-600 leading-relaxed">
+                        여러분, 숲속 깊은 곳이나 넓은 바다를 사람이 24시간 내내 지켜볼 수 있을까요? 
+                        불가능하겠죠? 그래서 우리에겐 특별한 도구들이 필요해요. 
+                        아래 카드들을 클릭해서 <b>어떤 기술들이 자연을 보호하고 있는지</b> 확인해 보세요!
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 1: Watching Eyes -->
+        <section class="mb-16">
+            <div class="flex items-center mb-6">
+                <div class="bg-blue-100 p-3 rounded-full mr-4 text-blue-600">
+                    <i class="fas fa-eye text-2xl"></i>
+                </div>
+                <h2 class="text-2xl md:text-3xl title-font text-blue-800">1. 지켜보는 눈 (관찰 기술)</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card 1: Drone -->
+                <div onclick="openModal('drone')" class="bg-white rounded-xl shadow-md p-6 cursor-pointer card-hover border-b-4 border-blue-400 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 text-3xl">
+                            <i class="fas fa-helicopter"></i>
+                        </div>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-bold">감시자</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">무인 항공기 (드론)</h3>
+                    <p class="text-gray-500 text-sm">사람이 가기 힘든 곳을 슝슝 날아다녀요.</p>
+                    <div class="mt-4 text-right text-blue-500 text-sm font-bold">클릭해서 자세히 보기 →</div>
+                </div>
+
+                <!-- Card 2: Camera Trap -->
+                <div onclick="openModal('camera')" class="bg-white rounded-xl shadow-md p-6 cursor-pointer card-hover border-b-4 border-blue-400 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 text-3xl">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-bold">잠복근무</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">카메라 트랩</h3>
+                    <p class="text-gray-500 text-sm">동물이 지나갈 때만 찰칵! 촬영해요.</p>
+                    <div class="mt-4 text-right text-blue-500 text-sm font-bold">클릭해서 자세히 보기 →</div>
+                </div>
+
+                <!-- Card 3: Satellite -->
+                <div onclick="openModal('satellite')" class="bg-white rounded-xl shadow-md p-6 cursor-pointer card-hover border-b-4 border-blue-400 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-500 text-3xl">
+                            <i class="fas fa-satellite"></i>
+                        </div>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-bold">우주</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">인공위성</h3>
+                    <p class="text-gray-500 text-sm">지구 밖에서 아주 넓은 숲을 한눈에 봐요.</p>
+                    <div class="mt-4 text-right text-blue-500 text-sm font-bold">클릭해서 자세히 보기 →</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Smart Brain -->
+        <section class="mb-16">
+            <div class="flex items-center mb-6">
+                <div class="bg-purple-100 p-3 rounded-full mr-4 text-purple-600">
+                    <i class="fas fa-brain text-2xl"></i>
+                </div>
+                <h2 class="text-2xl md:text-3xl title-font text-purple-800">2. 똑똑한 두뇌 (AI & 데이터)</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card 4: Sound AI -->
+                <div onclick="openModal('sound')" class="bg-white rounded-xl shadow-md p-6 cursor-pointer card-hover border-b-4 border-purple-400 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center text-purple-500 text-3xl">
+                            <i class="fas fa-file-audio"></i>
+                        </div>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-bold">소리 탐정</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">AI 소리 분석</h3>
+                    <p class="text-gray-500 text-sm">숲속의 모든 소리를 듣고 위험을 알아요.</p>
+                    <div class="mt-4 text-right text-purple-500 text-sm font-bold">클릭해서 자세히 보기 →</div>
+                </div>
+
+                <!-- Card 5: Image AI -->
+                <div onclick="openModal('image')" class="bg-white rounded-xl shadow-md p-6 cursor-pointer card-hover border-b-4 border-purple-400 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center text-purple-500 text-3xl">
+                            <i class="fas fa-images"></i>
+                        </div>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-bold">판독기</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">이미지 인식 AI</h3>
+                    <p class="text-gray-500 text-sm">수천 장의 사진 중 동물을 순식간에 찾아요.</p>
+                    <div class="mt-4 text-right text-purple-500 text-sm font-bold">클릭해서 자세히 보기 →</div>
+                </div>
+
+                <!-- Card 6: Fire Prediction -->
+                <div onclick="openModal('fire')" class="bg-white rounded-xl shadow-md p-6 cursor-pointer card-hover border-b-4 border-purple-400 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center text-purple-500 text-3xl">
+                            <i class="fas fa-fire-extinguisher"></i>
+                        </div>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-bold">예언자</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">산불 예측 시스템</h3>
+                    <p class="text-gray-500 text-sm">날씨를 분석해서 불이 날 곳을 미리 알려요.</p>
+                    <div class="mt-4 text-right text-purple-500 text-sm font-bold">클릭해서 자세히 보기 →</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Connection & Tracking -->
+        <section class="mb-12">
+            <div class="flex items-center mb-6">
+                <div class="bg-orange-100 p-3 rounded-full mr-4 text-orange-600">
+                    <i class="fas fa-network-wired text-2xl"></i>
+                </div>
+                <h2 class="text-2xl md:text-3xl title-font text-orange-800">3. 연결과 추적 (IoT & 위치)</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Card 7: GPS -->
+                <div onclick="openModal('gps')" class="bg-white rounded-xl shadow-md p-6 cursor-pointer card-hover border-b-4 border-orange-400 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 text-3xl">
+                            <i class="fas fa-map-location-dot"></i>
+                        </div>
+                        <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full font-bold">내비게이션</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">GPS 위치 추적기</h3>
+                    <p class="text-gray-500 text-sm">동물이 어디로 이동하는지 지도에 그려줘요.</p>
+                    <div class="mt-4 text-right text-orange-500 text-sm font-bold">클릭해서 자세히 보기 →</div>
+                </div>
+
+                <!-- Card 8: Smart Sensor -->
+                <div onclick="openModal('sensor')" class="bg-white rounded-xl shadow-md p-6 cursor-pointer card-hover border-b-4 border-orange-400 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center text-orange-500 text-3xl">
+                            <i class="fas fa-water"></i>
+                        </div>
+                        <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full font-bold">건강 검진</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">스마트 센서</h3>
+                    <p class="text-gray-500 text-sm">물이나 흙이 오염되지 않았는지 감시해요.</p>
+                    <div class="mt-4 text-right text-orange-500 text-sm font-bold">클릭해서 자세히 보기 →</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800 text-white py-8 text-center">
+        <p class="title-font text-lg mb-2">우리의 기술로 지구를 지켜요!</p>
+        <p class="text-sm opacity-60">Copyright © 생태계 보호 디지털 기술 수업 자료</p>
+    </footer>
+
+    <!-- Modal Overlay -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="closeModal()">
+        <!-- Modal Content -->
+        <div id="modalContent" class="bg-white rounded-2xl w-full max-w-lg z-50 shadow-2xl overflow-hidden relative" onclick="event.stopPropagation()">
+            <!-- Header with Color -->
+            <div id="modalHeader" class="bg-green-500 p-6 text-white relative">
+                <button onclick="closeModal()" class="absolute top-4 right-4 text-white opacity-70 hover:opacity-100 transition-opacity">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+                <div class="flex items-center space-x-4">
+                    <div id="modalIcon" class="bg-white text-green-500 w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-lg">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3 id="modalTitle" class="text-2xl font-bold title-font">기술 이름</h3>
+                </div>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-6 custom-scroll max-h-[60vh] overflow-y-auto">
+                <div class="mb-6">
+                    <h4 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">어떤 기술인가요?</h4>
+                    <p id="modalDesc" class="text-gray-700 text-lg leading-relaxed">설명이 들어갑니다.</p>
+                </div>
+                
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <h4 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center">
+                        <i class="fas fa-lightbulb text-yellow-500 mr-2"></i> 실제 활약 (예시)
+                    </h4>
+                    <ul id="modalDetail" class="text-slate-700 space-y-2 list-disc list-inside">
+                        <li>예시 내용이 들어갑니다.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Footer Button -->
+            <div class="p-4 border-t border-gray-100 flex justify-end">
+                <button onclick="closeModal()" class="px-6 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors font-bold">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data for the Modals
+        const techData = {
+            'drone': {
+                title: '무인 항공기 (드론)',
+                icon: 'fa-helicopter',
+                color: 'bg-blue-500',
+                textClass: 'text-blue-500',
+                desc: '사람이 조종하지 않아도 스스로 날아다닐 수 있는 비행기입니다. 깊은 숲속이나 절벽처럼 사람이 가기 위험한 곳도 쉽게 갈 수 있습니다.',
+                details: [
+                    '밀렵꾼(나쁜 사냥꾼)이 오는지 하늘에서 감시해요.',
+                    '나무 씨앗을 총처럼 쏴서 숲을 만드는 "드론 식목"을 해요.',
+                    '멸종 위기 동물이 몇 마리나 있는지 숫자를 세요.'
+                ]
+            },
+            'camera': {
+                title: '카메라 트랩',
+                icon: 'fa-camera',
+                color: 'bg-blue-500',
+                textClass: 'text-blue-500',
+                desc: '숲속 나무에 묶어두는 "무인 카메라"입니다. 센서가 있어서 동물들의 움직임이나 열을 감지하면 자동으로 사진이나 동영상을 찍습니다.',
+                details: [
+                    '밤에만 활동하는 야행성 동물들을 관찰할 수 있어요.',
+                    '사람 냄새가 나면 동물이 도망가지만, 이건 몰래 찍을 수 있어요.',
+                    '호랑이나 표범 같은 희귀 동물의 무늬를 구별해요.'
+                ]
+            },
+            'satellite': {
+                title: '인공위성',
+                icon: 'fa-satellite',
+                color: 'bg-blue-500',
+                textClass: 'text-blue-500',
+                desc: '지구 밖 우주에서 지구 전체를 내려다보는 "거대한 눈"입니다. 아주 넓은 지역의 변화를 한눈에 파악할 수 있습니다.',
+                details: [
+                    '아마존 숲이 얼마나 파괴되었는지 매일 사진을 찍어 비교해요.',
+                    '지구가 더워져서 바닷물이 얼마나 높아졌는지(해수면 상승) 감시해요.',
+                    '불법 벌목 트럭이 다니는 길을 찾아요.'
+                ]
+            },
+            'sound': {
+                title: 'AI 소리 분석',
+                icon: 'fa-file-audio',
+                color: 'bg-purple-500',
+                textClass: 'text-purple-500',
+                desc: '숲속에 설치된 마이크(귀)로 소리를 듣고, 인공지능이 "이게 무슨 소리인지" 알려주는 기술입니다.',
+                details: [
+                    '전기톱 소리(윙~)나 트럭 소리가 들리면 관리자 폰으로 바로 문자를 보내요.',
+                    '새소리만 따로 모아서 숲에 어떤 새들이 사는지 연구해요.',
+                    '사람이 24시간 듣고 있을 수 없지만 AI는 쉬지 않고 들을 수 있어요.'
+                ]
+            },
+            'image': {
+                title: '이미지 인식 AI',
+                icon: 'fa-images',
+                color: 'bg-purple-500',
+                textClass: 'text-purple-500',
+                desc: '카메라가 찍은 수만 장의 사진을 인공지능이 순식간에 보고 분석하는 기술입니다.',
+                details: [
+                    '바람에 흔들리는 나뭇가지 사진은 버리고, 동물이 나온 사진만 골라줘요.',
+                    '"이건 토끼야", "이건 고라니야" 하고 자동으로 이름을 붙여줘요.',
+                    '동물의 얼굴 생김새를 보고 개체별로 구분해요 (사람 지문처럼!).'
+                ]
+            },
+            'fire': {
+                title: '산불 예측 시스템',
+                icon: 'fa-fire-extinguisher',
+                color: 'bg-purple-500',
+                textClass: 'text-purple-500',
+                desc: '온도, 습도, 바람 세기 같은 날씨 정보와 숲의 상태를 분석해서 산불이 날 확률을 계산하는 똑똑한 예언자입니다.',
+                details: [
+                    '"오늘 오후 2시에 A지역 산불 위험!"이라고 미리 경고해줘요.',
+                    '소방관 아저씨들이 미리 준비할 수 있게 도와줘요.',
+                    '산불이 번질 방향을 예측해서 빨리 끌 수 있게 해줘요.'
+                ]
+            },
+            'gps': {
+                title: 'GPS 위치 추적기',
+                icon: 'fa-map-location-dot',
+                color: 'bg-orange-500',
+                textClass: 'text-orange-500',
+                desc: '동물의 몸에 작고 가벼운 장치를 달아서, 지금 어디에 있는지 인공위성을 통해 지도로 확인하는 기술입니다.',
+                details: [
+                    '바다거북이 알을 낳으러 어디까지 헤엄쳐 가는지 알 수 있어요.',
+                    '철새들이 겨울을 보내러 어디로 날아가는지 이동 경로를 지도로 그려요.',
+                    '동물들이 자주 가는 곳을 "보호 구역"으로 정할 수 있어요.'
+                ]
+            },
+            'sensor': {
+                title: '스마트 센서 (IoT)',
+                icon: 'fa-water',
+                color: 'bg-orange-500',
+                textClass: 'text-orange-500',
+                desc: '인터넷에 연결된 작은 센서들을 강, 호수, 숲 곳곳에 두어 자연의 건강 상태를 실시간으로 체크합니다.',
+                details: [
+                    '강물의 색깔이나 온도가 갑자기 변하면 오염된 것으로 보고 알람을 울려요.',
+                    '나무가 물이 부족하지 않은지 토양의 상태를 확인해요.',
+                    '공장이 몰래 폐수를 버리는지 24시간 감시해요.'
+                ]
+            }
+        };
+
+        function openModal(techId) {
+            const data = techData[techId];
+            const modal = document.getElementById('modalOverlay');
+            const content = document.getElementById('modalContent');
+            const header = document.getElementById('modalHeader');
+            const iconBox = document.getElementById('modalIcon');
+
+            // Set Content
+            document.getElementById('modalTitle').innerText = data.title;
+            document.getElementById('modalDesc').innerText = data.desc;
+            
+            // Set Icon
+            iconBox.innerHTML = `<i class="fas ${data.icon}"></i>`;
+            iconBox.className = `bg-white w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-lg ${data.textClass}`;
+
+            // Set Header Color
+            header.className = `${data.color} p-6 text-white relative transition-colors duration-300`;
+
+            // Set List Items
+            const listContainer = document.getElementById('modalDetail');
+            listContainer.innerHTML = '';
+            data.details.forEach(item => {
+                const li = document.createElement('li');
+                li.innerText = item;
+                listContainer.appendChild(li);
+            });
+
+            // Show Modal
+            modal.classList.remove('hidden');
+            content.classList.add('modal-enter');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('modalOverlay');
+            modal.classList.add('hidden');
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
