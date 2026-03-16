@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>비트런 마이크로비트 퀴즈</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Jua', sans-serif;
+            background: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow: hidden;
+        }
+        .quiz-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 2rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            width: 90%;
+            max-width: 500px;
+            padding: 2.5rem;
+            position: relative;
+            z-index: 10;
+            border: 5px solid #fff;
+        }
+        .option-btn {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 1.25rem;
+            padding: 1.1rem 1.5rem;
+            margin-bottom: 0.75rem;
+            width: 100%;
+            text-align: left;
+            font-size: 1.2rem;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+        /* 마우스 호버 시 통통 튀는 애니메이션 */
+        .option-btn:hover:not(:disabled) {
+            transform: scale(1.05) translateY(-5px);
+            background-color: #fffbeb;
+            border-color: #fbbf24;
+            box-shadow: 0 10px 20px rgba(251, 191, 36, 0.3);
+        }
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .progress-bar {
+            height: 12px;
+            background-color: #f1f5f9;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f97316, #fbbf24);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="quiz-card text-center">
+        <!-- 시작 화면 -->
+        <div id="start-screen">
+            <div class="text-7xl mb-4">🚀</div>
+            <h1 class="text-4xl text-orange-600 mb-2">비트런 타임어택!</h1>
+            <p class="text-gray-500 mb-8">나침반 센서까지 마스터했나요?<br>누구보다 빠르게 정답을 맞춰보세요!</p>
+            <button onclick="startQuiz()" class="bg-orange-500 text-white px-12 py-4 rounded-full text-2xl font-bold hover:bg-orange-600 transition-all shadow-xl active:scale-95">시작하기</button>
+        </div>
+
+        <!-- 퀴즈 화면 -->
+        <div id="quiz-screen" class="hidden text-left">
+            <div class="flex justify-between items-center mb-2">
+                <span id="q-counter" class="text-orange-500 font-bold text-lg">질문 1/10</span>
+                <span id="timer-display" class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-bold">시간: 00:00</span>
+            </div>
+            <div class="progress-bar mb-6">
+                <div id="progress-fill" class="progress-fill" style="width: 10%"></div>
+            </div>
+            <h2 id="q-text" class="text-2xl font-bold mb-8 text-gray-800 break-keep min-h-[4rem]">로딩 중...</h2>
+            <div id="options-box"></div>
+            <p id="hint-text" class="mt-8 text-gray-400 text-sm italic text-center"></p>
+        </div>
+
+        <!-- 결과 화면 -->
+        <div id="result-screen" class="hidden">
+            <div id="result-emoji" class="text-8xl mb-4">🏆</div>
+            <h2 class="text-4xl font-bold mb-4">미션 완료!</h2>
+            <div class="bg-orange-50 p-6 rounded-3xl mb-8 border-2 border-orange-100">
+                <p id="final-score" class="text-2xl font-bold text-orange-600 mb-2">10 / 10</p>
+                <p id="final-time" class="text-3xl text-gray-800 font-bold">소요 시간: 00분 00초</p>
+            </div>
+            <button onclick="location.reload()" class="bg-blue-500 text-white px-10 py-3 rounded-full text-xl hover:bg-blue-600 shadow-lg font-bold">다시 도전</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "마이크로비트 앞면에 직접 누를 수 있는 물리 버튼은 총 몇 개일까요?", a: ["1개", "2개", "3개", "25개"], c: 1, h: "A 버튼과 B 버튼이 대표적이에요!" },
+            { q: "마이크로비트 LED 판은 5x5 구조입니다. 총 몇 개의 LED가 있나요?", a: ["10개", "15개", "25개", "50개"], c: 2, h: "5 곱하기 5는?" },
+            { q: "코딩 블록에서 '일시 중지(1000)'는 몇 초를 의미할까요?", a: ["0.1초", "1초", "10초", "100초"], c: 1, h: "1000ms는 1초와 같습니다." },
+            { q: "애니메이션을 만들 때, 그림 사이사이에 꼭 넣어야 하는 블록은?", a: ["무한 반복", "일시 중지", "변수 만들기", "소리 출력"], c: 1, h: "그림이 너무 빨리 넘어가지 않도록!" },
+            { q: "마이크로비트를 수평으로 들고 '동서남북' 방위를 감지하는 센서는?", a: ["온도 센서", "빛 센서", "나침반 센서", "기울기 센서"], c: 2, h: "나침반은 어디를 가리키나요? (지자기 센서)" },
+            { q: "버튼 A와 B를 동시에 눌렀을 때의 기능을 만드는 블록은?", a: ["A 누르면", "B 누르면", "A+B 누르면", "흔들면"], c: 2, h: "두 버튼이 합쳐진 기호!" },
+            { q: "전원이 꺼질 때까지 프로그램이 계속 반복되게 하는 블록은?", a: ["시작하면 실행", "무한 반복 실행", "함수 호출", "라디오 통신"], c: 1, h: "영원히 돌아가는 블록!" },
+            { q: "마이크로비트의 흔들림이나 기울기를 감지하는 센서의 이름은?", a: ["가속도 센서", "온도 센서", "습도 센서", "가스 센서"], c: 0, h: "속도의 변화(기울기)를 측정해요." },
+            { q: "완성된 코드를 파일로 내려받아 마이크로비트로 보내는 버튼 이름은?", a: ["공유", "삭제", "다운로드", "저장"], c: 2, h: "인터넷에서 무언가 가져올 때 쓰는 말!" },
+            { q: "LED 화면에 문장이나 단어가 옆으로 흐르며 나오게 하는 블록은?", a: ["아이콘 출력", "문자열 출력", "수치 출력", "핀 출력"], c: 1, h: "글자들의 묶음을 출력합니다!" }
+        ];
+
+        let currentQ = 0;
+        let score = 0;
+        let startTime, timerInterval;
+        let canClick = true;
+
+        // Sound Effect
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSfx(isWin) {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.connect(g); g.connect(audioCtx.destination);
+            if(isWin) {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1046.5, audioCtx.currentTime + 0.3);
+                g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            } else {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            }
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        // Fireworks
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let parts = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Part {
+            constructor(x,y) {
+                this.x = x; this.y = y;
+                this.size = Math.random()*5+2;
+                this.sx = (Math.random()-0.5)*15;
+                this.sy = (Math.random()-0.5)*15;
+                this.c = `hsl(${Math.random()*360}, 100%, 60%)`;
+                this.life = 1;
+            }
+            update() { this.x += this.sx; this.y += this.sy; this.sy += 0.2; this.life -= 0.02; }
+            draw() { ctx.globalAlpha = this.life; ctx.fillStyle = this.c; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fill(); }
+        }
+
+        function bang(x,y) { for(let i=0; i<40; i++) parts.push(new Part(x,y)); }
+        function loop() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            parts = parts.filter(p => p.life > 0);
+            parts.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(loop);
+        }
+        loop();
+
+        function startQuiz() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const sec = Math.floor((Date.now() - startTime)/1000);
+                const mm = String(Math.floor(sec/60)).padStart(2, '0');
+                const ss = String(sec%60).padStart(2, '0');
+                document.getElementById('timer-display').innerText = `시간: ${mm}:${ss}`;
+            }, 1000);
+            renderQ();
+        }
+
+        function renderQ() {
+            const q = questions[currentQ];
+            document.getElementById('q-counter').innerText = `질문 ${currentQ+1}/${questions.length}`;
+            document.getElementById('q-text').innerText = q.q;
+            document.getElementById('hint-text').innerText = `💡 힌트: ${q.h}`;
+            document.getElementById('progress-fill').style.width = `${((currentQ+1)/questions.length)*100}%`;
+            
+            const box = document.getElementById('options-box');
+            box.innerHTML = '';
+            q.a.forEach((opt, idx) => {
+                const b = document.createElement('button');
+                b.className = 'option-btn';
+                b.innerText = `${idx+1}. ${opt}`;
+                b.onclick = (e) => check(idx, e);
+                box.appendChild(b);
+            });
+            canClick = true;
+        }
+
+        function check(idx, e) {
+            if(!canClick) return;
+            canClick = false;
+            const q = questions[currentQ];
+            const btns = document.querySelectorAll('.option-btn');
+            
+            if(idx === q.c) {
+                score++;
+                btns[idx].style.borderColor = '#48bb78';
+                btns[idx].style.backgroundColor = '#f0fff4';
+                playSfx(true);
+                const r = e.target.getBoundingClientRect();
+                bang(r.left + r.width/2, r.top + r.height/2);
+            } else {
+                btns[idx].classList.add('shake');
+                btns[idx].style.borderColor = '#f56565';
+                btns[idx].style.backgroundColor = '#fff5f5';
+                btns[q.c].style.borderColor = '#48bb78';
+                playSfx(false);
+            }
+
+            setTimeout(() => {
+                currentQ++;
+                if(currentQ < questions.length) renderQ();
+                else finish();
+            }, 1200);
+        }
+
+        function finish() {
+            clearInterval(timerInterval);
+            const totalSec = Math.floor((Date.now() - startTime)/1000);
+            const mm = Math.floor(totalSec/60);
+            const ss = totalSec%60;
+            
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = `${questions.length}문제 중 ${score}문제를 맞혔어요!`;
+            document.getElementById('final-time').innerText = `소요 시간: ${mm > 0 ? mm + '분 ' : ''}${ss}초`;
+            
+            if(score >= 8) {
+                document.getElementById('result-emoji').innerText = "🏆";
+                for(let i=0; i<6; i++) setTimeout(() => bang(Math.random()*canvas.width, Math.random()*canvas.height), i*400);
+            }
+        }
+    </script>
+</body>
+</html>
