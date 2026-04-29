@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>따뜻한 챗봇 기획하기 - 대상 선정</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: #fdf2f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+            border: 4px solid #ffffff;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .option-btn {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid #f1f5f9;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        .option-btn:hover {
+            transform: translateY(-3px) scale(1.01);
+            background-color: #ec4899;
+            color: white;
+            border-color: #ec4899;
+            box-shadow: 0 10px 15px rgba(236, 72, 153, 0.2);
+        }
+
+        .option-btn:active {
+            transform: scale(0.98);
+        }
+
+        @keyframes bounce-gentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .animate-bounce-gentle {
+            animation: bounce-gentle 2s infinite;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-highlight {
+            background: linear-gradient(120deg, #db2777 0%, #9333ea 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .progress-bar {
+            transition: width 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="w-full max-w-md px-4 py-8">
+    <div id="main-container" class="glass-card p-8 text-center relative overflow-hidden">
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="space-y-6">
+            <div class="text-6xl mb-4 animate-bounce-gentle">🤖</div>
+            <h1 class="text-2xl font-extrabold text-pink-600">사회적 약자를 위한<br>챗봇 기획 가이드</h1>
+            <p class="text-gray-600 text-sm leading-relaxed break-keep">
+                내가 진짜 돕고 싶은 사람은 누구일까?<br>6개의 질문을 통해 너의 따뜻한 마음을 확인해봐!
+            </p>
+            <button onclick="startQuiz()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-4 px-10 rounded-full text-lg shadow-lg transition-all">
+                탐색 시작하기
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden space-y-6">
+            <div class="w-full bg-gray-100 h-2 rounded-full mb-2">
+                <div id="progress" class="progress-bar bg-pink-500 h-2 rounded-full" style="width: 0%"></div>
+            </div>
+            <p id="question-count" class="text-pink-400 font-bold text-xs tracking-widest uppercase">Question 1</p>
+            <h2 id="question-text" class="text-xl font-bold text-gray-800 leading-snug break-keep min-h-[3.5rem]">질문 내용</h2>
+            <div id="options" class="flex flex-col gap-3 pt-4">
+                <!-- Options will be injected here -->
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden space-y-6 fade-in">
+            <div id="result-emoji" class="text-7xl mb-4 animate-bounce-gentle">✨</div>
+            <div class="space-y-2">
+                <h2 id="result-intro" class="text-lg font-bold text-gray-700 leading-relaxed break-keep">
+                    <!-- Intro text -->
+                </h2>
+                <div class="py-6 px-4 bg-pink-50 rounded-2xl border-2 border-dashed border-pink-200">
+                    <p class="text-pink-500 font-bold text-sm mb-1 uppercase tracking-tighter">추천 기획 대상</p>
+                    <h1 id="result-target" class="text-3xl font-extrabold result-highlight"></h1>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-xl text-sm text-gray-500 italic">
+                "작은 관심이 세상을 바꾸는 큰 기술이 됩니다."
+            </div>
+            <button onclick="restart()" class="text-pink-500 font-bold hover:underline">처음부터 다시하기</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        {
+            q: "평소 뉴스나 SNS에서 어떤 이야기를 들을 때 가장 기억에 오래 남나요?",
+            options: [
+                { text: "몸이 불편해 가고 싶은 곳을 마음대로 못 가는 사람들의 이야기", type: "장애인" },
+                { text: "디지털 기기가 낯설어 일상생활에 어려움을 겪는 할아버지 이야기", type: "어르신" },
+                { text: "한국어가 서툴러서 병원이나 관공서에서 고생하는 외국인 이야기", type: "언어적 약자" },
+                { text: "부모님의 보살핌을 받지 못해 끼니를 걱정하는 어린아이 이야기", type: "청소년 및 아동" }
+            ]
+        },
+        {
+            q: "여러분이 가진 초능력으로 딱 한 그룹의 어려움을 해결한다면?",
+            options: [
+                { text: "무거운 몸으로 대중교통을 이용하기 힘든 분들을 돕고 싶어", type: "임산부" },
+                { text: "돈이 없어서 배우고 싶은 것을 포기해야 하는 친구들을 돕고 싶어", type: "경제적 약자" },
+                { text: "혼자 계시며 대화 상대가 필요한 할머니의 말동무가 되고 싶어", type: "어르신" },
+                { text: "수어 통역이 필요한 순간에 바로 소통을 도와주고 싶어", type: "장애인" }
+            ]
+        },
+        {
+            q: "학교 가는 길에 이런 챗봇이 있다면 정말 좋겠다고 생각한 적 있나요?",
+            options: [
+                { text: "어려운 공공기관 서류나 안내문을 쉬운 말로 풀어서 설명해주는 챗봇", type: "언어적 약자" },
+                { text: "저소득층 학생들을 위해 무료 급식소나 지원금을 찾아주는 챗봇", type: "경제적 약자" },
+                { text: "아이들이 고민이 있을 때 24시간 상담해주는 다정한 챗봇", type: "청소년 및 아동" },
+                { text: "임산부 배려석이 비어있는지 미리 확인해주는 챗봇", type: "임산부" }
+            ]
+        },
+        {
+            q: "챗봇을 기획할 때 가장 중요하게 생각하는 가치는 무엇인가요?",
+            options: [
+                { text: "누구나 신체적 제약 없이 정보를 얻을 수 있는 '평등함'", type: "장애인" },
+                { text: "변해가는 세상 속에서 소외되는 분들을 챙기는 '배려'", type: "어르신" },
+                { text: "사회에 첫발을 내딛는 아이들이 건강하게 자라는 '미래'", type: "청소년 및 아동" },
+                { text: "언어의 장벽을 넘어 서로의 진심이 전달되는 '소통'", type: "언어적 약자" }
+            ]
+        },
+        {
+            q: "만약 여러분이 챗봇의 목소리를 정한다면 어떤 느낌이 좋을까요?",
+            options: [
+                { text: "차분하고 친절하게 길과 정보를 안내해주는 목소리", type: "장애인" },
+                { text: "따뜻하고 상냥하게 안부를 물어봐주는 손주 같은 목소리", type: "어르신" },
+                { text: "또래 친구처럼 고민을 들어주고 응원해주는 활기찬 목소리", type: "청소년 및 아동" },
+                { text: "천천히 정확한 발음으로 이해하기 쉽게 말해주는 목소리", type: "언어적 약자" }
+            ]
+        },
+        {
+            q: "마지막으로, 여러분의 챗봇이 설치될 가장 이상적인 장소는?",
+            options: [
+                { text: "지하철역이나 공공기관의 안내 스크린", type: "장애인" },
+                { text: "동네 경로당이나 어르신들이 자주 찾는 복지관", type: "어르신" },
+                { text: "학교 홈페이지나 청소년 쉼터의 모바일 앱", type: "청소년 및 아동" },
+                { text: "동사무소나 다문화 가족 지원 센터", type: "언어적 약자" }
+            ]
+        }
+    ];
+
+    const targets = {
+        "장애인": { emoji: "♿", color: "pink" },
+        "어르신": { emoji: "👵", color: "pink" },
+        "청소년 및 아동": { emoji: "🎒", color: "pink" },
+        "임산부": { emoji: "🤰", color: "pink" },
+        "언어적 약자": { emoji: "🗣️", color: "pink" },
+        "경제적 약자": { emoji: "🏡", color: "pink" }
+    };
+
+    let currentIdx = 0;
+    let scores = {};
+
+    // Initialize scores
+    Object.keys(targets).forEach(k => scores[k] = 0);
+
+    function startQuiz() {
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const qData = quizData[currentIdx];
+        document.getElementById('question-count').innerText = `Question ${currentIdx + 1} / ${quizData.length}`;
+        document.getElementById('question-text').innerText = qData.q;
+        document.getElementById('progress').style.width = ((currentIdx) / quizData.length * 100) + '%';
+
+        const optionsDiv = document.getElementById('options');
+        optionsDiv.innerHTML = '';
+
+        qData.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = "option-btn p-4 rounded-xl font-medium text-gray-700 bg-white shadow-sm hover:shadow-md active:scale-95 text-sm sm:text-base";
+            btn.innerText = opt.text;
+            btn.onclick = () => selectOption(opt.type);
+            optionsDiv.appendChild(btn);
+        });
+    }
+
+    function selectOption(type) {
+        scores[type] += 1;
+        currentIdx++;
+
+        if (currentIdx < quizData.length) {
+            showQuestion();
+        } else {
+            document.getElementById('progress').style.width = '100%';
+            setTimeout(showResult, 400);
+        }
+    }
+
+    function showResult() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+
+        // Find max score
+        const winningTarget = Object.keys(scores).reduce((a, b) => scores[a] >= scores[b] ? a : b);
+        const data = targets[winningTarget];
+
+        document.getElementById('result-emoji').innerText = data.emoji;
+        document.getElementById('result-target').innerText = winningTarget;
+        document.getElementById('result-intro').innerHTML = 
+            `<span class="text-pink-600 font-extrabold">${winningTarget}</span>에게 따뜻한 관심이 가득한 당신!<br>너는 이분들을 위한 챗봇을 기획할 때<br>가장 멋진 아이디어를 낼 것 같아!`;
+    }
+
+    function restart() {
+        currentIdx = 0;
+        Object.keys(targets).forEach(k => scores[k] = 0);
+        document.getElementById('result-screen').classList.add('hidden');
+        document.getElementById('start-screen').classList.remove('hidden');
+        document.getElementById('progress').style.width = '0%';
+    }
+</script>
+
+</body>
+</html>
