@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기후변화 대응 교육 퀴즈</title>
+    <style>
+        body { 
+            font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif; 
+            background-color: #f4f7f5; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0;
+            color: #2c3e50;
+        }
+        
+        #quiz-container { 
+            background: white; 
+            padding: 2.5rem; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            width: 90%; 
+            max-width: 550px; 
+            text-align: center;
+            border-top: 8px solid #27ae60;
+        }
+
+        h1 { color: #2c3e50; font-size: 1.6rem; margin-bottom: 20px; letter-spacing: -0.5px; }
+        .progress { font-size: 0.95rem; color: #7f8c8d; margin-bottom: 25px; font-weight: 500; }
+        .question { font-size: 1.3rem; margin-bottom: 30px; font-weight: 700; line-height: 1.5; color: #34495e; word-break: keep-all; min-height: 80px;}
+        .options { display: grid; gap: 12px; }
+
+        button { 
+            padding: 15px; 
+            border: 1px solid #dcdde1; 
+            border-radius: 6px; 
+            background: #fff; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+            font-size: 1.05rem; 
+            font-weight: 500;
+            color: #2c3e50;
+            outline: none;
+        }
+
+        button:hover:not(:disabled) { background: #f8f9fa; border-color: #27ae60; color: #27ae60; }
+        
+        /* 정답/오답 상태 스타일 */
+        button.correct-choice { background-color: #eafaf1 !important; border-color: #2ecc71 !important; color: #1e8449 !important; font-weight: bold; }
+        button.wrong-choice { background-color: #fdf2f2 !important; border-color: #ec7063 !important; color: #943126 !important; }
+
+        .result-overlay { 
+            margin-top: 25px; 
+            font-weight: 600; 
+            padding: 15px; 
+            border-radius: 6px; 
+            height: 24px;
+            visibility: hidden;
+        }
+
+        #start-btn { 
+            margin-top: 25px; background: #27ae60; color: white; border: none; width: 100%; cursor: pointer; padding: 16px; border-radius: 6px; font-size: 1.1rem; font-weight: 600;
+        }
+
+        #score-display { font-size: 1.4rem; color: #27ae60; font-weight: 700; margin: 25px 0; }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <h1 id="main-title">🌍 기후변화 대응 지식 퀴즈</h1>
+    
+    <div id="start-screen">
+        <p style="line-height: 1.6; color: #7f8c8d;">우리 지구를 지키기 위한 올바른 지식을 확인해봅시다.<br>답을 선택하면 자동으로 다음 문제로 넘어갑니다.</p>
+        <button id="start-btn" onclick="startQuiz()">테스트 시작하기</button>
+    </div>
+
+    <div id="quiz-content" style="display:none;">
+        <div class="progress" id="progress-text">Question 01 / 10</div>
+        <div class="question" id="question-text"></div>
+        <div class="options" id="options-container"></div>
+        <div id="result-msg" class="result-overlay">결과 대기 중</div>
+    </div>
+
+    <div id="final-result" style="display:none;">
+        <h2>학습 결과 리포트</h2>
+        <p id="score-display"></p>
+        <p id="feedback-text" style="line-height: 1.6; color: #7f8c8d; margin-bottom: 20px;"></p>
+        <button onclick="location.reload()" style="background:#34495e; color:white; width:100%; padding:16px; border:none; border-radius:6px; cursor:pointer; font-weight: 600;">다시 참여하기</button>
+    </div>
+</div>
+
+<script>
+    const quizData = [
+        { q: "지구의 온도가 점점 높아져 북극 얼음이 녹는 현상은 무엇일까요?", a: ["지구 온난화", "지구 냉각화", "지구 평탄화"], cor: 0 },
+        { q: "지구를 뜨겁게 만드는 '범인' 가스의 정확한 명칭은?", a: ["산소", "온실가스", "질소"], cor: 1 },
+        { q: "북극곰이 살 곳을 잃어버리는 가장 큰 원인은 무엇일까요?", a: ["불법 사냥", "빙하(얼음)의 유실", "먹이의 과잉"], cor: 1 },
+        { q: "탄소 배출을 줄이기 위한 생활 속 실천 방법은?", a: ["개인 차량 이용", "사용하지 않는 전등 끄기", "일회용품 사용 확대"], cor: 1 },
+        { q: "이산화탄소를 흡수하여 산소를 공급하는 '지구의 허파'는?", a: ["대형 공장", "나무와 숲", "교통 시설"], cor: 1 },
+        { q: "자원 순환을 위해 분리배출을 해야 하는 근본적인 이유는?", a: ["자원의 재활용", "시각적 청결", "쓰레기 보관"], cor: 0 },
+        { q: "여름철 과도한 냉방기기 사용이 지구에 미치는 영향은?", a: ["지구 온도 저하", "지구 온난화 가속", "영향 없음"], cor: 1 },
+        { q: "개인이 일상에서 배출하는 탄소의 양을 수치화한 것은?", a: ["탄소 발자국", "탄소 손가락", "탄소 머리카락"], cor: 0 },
+        { q: "바다로 흘러 들어간 플라스틱이 완전히 분해되는 기간은?", a: ["약 1년", "약 10년", "약 500년 이상"], cor: 2 },
+        { q: "매년 4월 22일, 지구를 위해 10분간 불을 끄는 캠페인은?", a: ["소등 행사", "댄스 파티", "요리 대회"], cor: 0 }
+    ];
+
+    let currentIdx = 0;
+    let score = 0;
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    function playSound(isCorrect) {
+        initAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        if (isCorrect) {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+            osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); 
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        } else {
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(110.00, audioCtx.currentTime); 
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        }
+    }
+
+    function startQuiz() {
+        initAudio();
+        document.getElementById("start-screen").style.display = "none";
+        document.getElementById("quiz-content").style.display = "block";
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        const q = quizData[currentIdx];
+        document.getElementById("progress-text").innerText = `Question ${String(currentIdx + 1).padStart(2, '0')} / ${quizData.length}`;
+        document.getElementById("question-text").innerText = q.q;
+        const container = document.getElementById("options-container");
+        container.innerHTML = "";
+        const resultMsg = document.getElementById("result-msg");
+        resultMsg.style.visibility = "hidden";
+
+        q.a.forEach((opt, i) => {
+            const btn = document.createElement("button");
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(i, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selected, targetBtn) {
+        const buttons = document.querySelectorAll(".options button");
+        const isCorrect = selected === quizData[currentIdx].cor;
+        const resultMsg = document.getElementById("result-msg");
+        
+        buttons.forEach(btn => btn.disabled = true);
+        playSound(isCorrect);
+
+        // 시각적 피드백 제공
+        if (isCorrect) {
+            targetBtn.classList.add("correct-choice");
+            resultMsg.innerText = "정답입니다!";
+            resultMsg.style.color = "#1e8449";
+            score++;
+        } else {
+            targetBtn.classList.add("wrong-choice");
+            buttons[quizData[currentIdx].cor].classList.add("correct-choice");
+            resultMsg.innerText = "오답입니다.";
+            resultMsg.style.color = "#943126";
+        }
+        resultMsg.style.visibility = "visible";
+
+        // 0.8초 후 자동으로 다음 문제 이동
+        setTimeout(() => {
+            currentIdx++;
+            if (currentIdx < quizData.length) {
+                loadQuestion();
+            } else {
+                showFinalResult();
+            }
+        }, 800);
+    }
+
+    function showFinalResult() {
+        document.getElementById("quiz-content").style.display = "none";
+        document.getElementById("main-title").innerText = "최종 평가 결과";
+        document.getElementById("final-result").style.display = "block";
+        document.getElementById("score-display").innerText = `${quizData.length}문항 중 ${score}문항 정답`;
+        
+        let feedback = "";
+        if(score === 10) feedback = "기후변화에 대해 완벽하게 이해하고 계십니다. 훌륭한 환경 지도자이시군요.";
+        else if(score >= 7) feedback = "환경 문제에 대해 높은 관심을 가지고 계십니다. 실천을 통해 더 큰 변화를 만들어주세요.";
+        else feedback = "기후 위기의 심각성을 다시 한번 학습하고, 작은 것부터 실천해보는 계기가 되길 바랍니다.";
+        document.getElementById("feedback-text").innerText = feedback;
+    }
+</script>
+
+</body>
+</html>
