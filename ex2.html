@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>여름날의 발표자 뽑기 🌊</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Pretendard Font -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+    
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .shuffle-anim {
+            animation: bounce 0.1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .winner-pop {
+            animation: pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .hidden-panel {
+            display: none;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Side Panel: Configuration -->
+        <div class="lg:col-span-1 flex flex-col gap-6">
+            <!-- Header Card -->
+            <div class="glass rounded-3xl p-6 text-white text-center">
+                <h1 class="text-3xl font-bold mb-2">
+                    <i class="fa-solid fa-wind mr-2"></i>발표자 뽑기
+                </h1>
+                <p class="text-sm opacity-80">시원한 여름날의 공정한 선택</p>
+            </div>
+
+            <!-- Name Management Card -->
+            <div class="glass rounded-3xl p-6 text-white flex-grow">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold"><i class="fa-solid fa-users mr-2"></i>학생 명단</h2>
+                    <span id="studentCount" class="bg-white/30 px-3 py-1 rounded-full text-xs font-bold">0명</span>
+                </div>
+                
+                <div class="flex gap-2 mb-4">
+                    <input type="text" id="nameInput" placeholder="이름 입력..." 
+                        class="flex-grow bg-white/20 border-none rounded-xl px-4 py-2 text-white placeholder-white/60 focus:ring-2 focus:ring-emerald-300 outline-none transition-all">
+                    <button onclick="addSingleName()" class="bg-white/30 hover:bg-white/40 p-2 rounded-xl transition-all">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+
+                <div class="mb-4">
+                    <button onclick="toggleBulkInput()" class="w-full text-sm py-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-all">
+                        <i class="fa-solid fa-file-import mr-2"></i>대량 등록 (엑셀/메모장)
+                    </button>
+                </div>
+
+                <div id="bulkArea" class="hidden-panel mb-4">
+                    <textarea id="bulkInput" rows="5" placeholder="이름을 줄바꿈이나 쉼표로 구분하여 붙여넣으세요."
+                        class="w-full bg-white/20 border-none rounded-xl p-3 text-sm text-white placeholder-white/60 focus:ring-2 focus:ring-emerald-300 outline-none"></textarea>
+                    <button onclick="addBulkNames()" class="w-full mt-2 bg-emerald-500 hover:bg-emerald-600 py-2 rounded-xl text-white font-bold transition-all">등록 완료</button>
+                </div>
+
+                <div id="studentList" class="max-h-64 overflow-y-auto flex flex-wrap gap-2 mb-4">
+                    <!-- Names will be injected here -->
+                    <p id="emptyMsg" class="text-sm text-white/60 w-full text-center py-4">등록된 학생이 없습니다.</p>
+                </div>
+
+                <button onclick="clearAll()" class="w-full text-xs text-red-100/70 hover:text-red-200 text-right underline">명단 초기화</button>
+            </div>
+        </div>
+
+        <!-- Main Panel: The Picker -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+            <!-- Picker Display Card -->
+            <div class="glass rounded-3xl p-8 flex flex-col items-center justify-center relative overflow-hidden min-h-[400px] text-white">
+                
+                <!-- Floating Decorative Icons -->
+                <i class="fa-solid fa-sun absolute top-10 right-10 text-6xl opacity-10 animate-pulse"></i>
+                <i class="fa-solid fa-water absolute bottom-10 left-10 text-6xl opacity-10"></i>
+
+                <div id="displayArea" class="text-center z-10">
+                    <div id="statusTag" class="inline-block bg-white/20 px-4 py-1 rounded-full text-sm font-medium mb-6">준비 완료</div>
+                    <div id="currentName" class="text-7xl md:text-9xl font-black mb-8 drop-shadow-lg tracking-tight">?</div>
+                    
+                    <div class="flex flex-col items-center gap-6">
+                        <!-- Options -->
+                        <div class="flex items-center gap-4 text-sm bg-black/10 px-6 py-3 rounded-2xl">
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="checkbox" id="excludeMode" class="hidden peer">
+                                <div class="w-5 h-5 border-2 border-white/50 rounded flex items-center justify-center peer-checked:bg-emerald-400 peer-checked:border-emerald-400 transition-all mr-2">
+                                    <i class="fa-solid fa-check text-xs text-white opacity-0 peer-checked:opacity-100"></i>
+                                </div>
+                                <span class="group-hover:text-emerald-200 transition-colors">중복 방지 (뽑힌 학생 제외)</span>
+                            </label>
+                        </div>
+
+                        <button id="pickBtn" onclick="startPicking()" 
+                            class="group relative bg-white text-emerald-600 font-black px-12 py-5 rounded-2xl text-2xl shadow-xl hover:scale-105 active:scale-95 transition-all">
+                            <span id="btnText">오늘의 주인공은?</span>
+                            <div class="absolute inset-0 rounded-2xl bg-white animate-ping opacity-20 pointer-events-none group-hover:block hidden"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Card -->
+            <div class="glass rounded-3xl p-6 text-white">
+                <h3 class="text-lg font-semibold mb-4 flex items-center justify-between">
+                    <span><i class="fa-solid fa-clock-rotate-left mr-2"></i>지명 히스토리</span>
+                    <button onclick="clearHistory()" class="text-xs opacity-60 hover:opacity-100">기록 삭제</button>
+                </h3>
+                <div id="historyList" class="flex flex-wrap gap-3">
+                    <!-- History items will be injected here -->
+                    <p id="historyEmpty" class="text-sm opacity-50">아직 뽑힌 학생이 없습니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Feedback Overlay (Hidden) -->
+    <div id="overlay" class="fixed inset-0 pointer-events-none z-50 flex items-center justify-center"></div>
+
+    <script>
+        let students = [];
+        let pickedStudents = [];
+        let isPicking = false;
+
+        // --- Core Functions ---
+
+        function addSingleName() {
+            const input = document.getElementById('nameInput');
+            const name = input.value.trim();
+            if (name) {
+                if (!students.includes(name)) {
+                    students.push(name);
+                    updateUI();
+                    input.value = '';
+                } else {
+                    showMessage("이미 존재하는 이름입니다.");
+                }
+            }
+        }
+
+        function toggleBulkInput() {
+            const area = document.getElementById('bulkArea');
+            area.classList.toggle('hidden-panel');
+        }
+
+        function addBulkNames() {
+            const input = document.getElementById('bulkInput');
+            const newNames = input.value.split(/[,\n]+/).map(n => n.trim()).filter(n => n !== "");
+            
+            newNames.forEach(name => {
+                if (!students.includes(name)) {
+                    students.push(name);
+                }
+            });
+            
+            updateUI();
+            input.value = '';
+            toggleBulkInput();
+        }
+
+        function removeName(name) {
+            students = students.filter(s => s !== name);
+            pickedStudents = pickedStudents.filter(s => s !== name);
+            updateUI();
+        }
+
+        function clearAll() {
+            if (confirm("모든 명단을 삭제할까요?")) {
+                students = [];
+                pickedStudents = [];
+                updateUI();
+            }
+        }
+
+        function clearHistory() {
+            pickedStudents = [];
+            updateHistoryUI();
+        }
+
+        // --- UI Updates ---
+
+        function updateUI() {
+            const list = document.getElementById('studentList');
+            const emptyMsg = document.getElementById('emptyMsg');
+            const countTag = document.getElementById('studentCount');
+
+            countTag.innerText = `${students.length}명`;
+            list.innerHTML = "";
+
+            if (students.length === 0) {
+                emptyMsg.style.display = "block";
+                list.appendChild(emptyMsg);
+            } else {
+                emptyMsg.style.display = "none";
+                students.forEach(name => {
+                    const tag = document.createElement('div');
+                    tag.className = "bg-white/20 hover:bg-white/40 px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition-all cursor-default group";
+                    tag.innerHTML = `
+                        ${name}
+                        <i class="fa-solid fa-xmark text-xs opacity-0 group-hover:opacity-100 cursor-pointer text-red-200" onclick="removeName('${name}')"></i>
+                    `;
+                    list.appendChild(tag);
+                });
+            }
+        }
+
+        function updateHistoryUI() {
+            const historyList = document.getElementById('historyList');
+            const emptyMsg = document.getElementById('historyEmpty');
+            historyList.innerHTML = "";
+
+            if (pickedStudents.length === 0) {
+                historyList.appendChild(emptyMsg);
+            } else {
+                pickedStudents.forEach((name, idx) => {
+                    const item = document.createElement('div');
+                    item.className = "bg-emerald-400/30 border border-emerald-300/40 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 animate-pop";
+                    item.innerHTML = `<span class="text-xs opacity-60">${pickedStudents.length - idx}.</span> ${name}`;
+                    historyList.appendChild(item);
+                });
+            }
+        }
+
+        // --- Logic: The Picking Game ---
+
+        function startPicking() {
+            if (isPicking) return;
+            
+            const isExcludeMode = document.getElementById('excludeMode').checked;
+            let availablePool = isExcludeMode 
+                ? students.filter(s => !pickedStudents.includes(s)) 
+                : students;
+
+            if (availablePool.length === 0) {
+                if (isExcludeMode && students.length > 0) {
+                    showMessage("모든 학생이 한 번씩 뽑혔습니다! 기록을 초기화하거나 중복 방지를 해제하세요.");
+                } else {
+                    showMessage("먼저 명단을 등록해주세요.");
+                }
+                return;
+            }
+
+            isPicking = true;
+            const display = document.getElementById('currentName');
+            const status = document.getElementById('statusTag');
+            const btnText = document.getElementById('btnText');
+            const pickBtn = document.getElementById('pickBtn');
+
+            status.innerText = "두구두구두구...";
+            status.className = "inline-block bg-yellow-400/40 px-4 py-1 rounded-full text-sm font-medium mb-6 animate-pulse";
+            btnText.innerText = "멈추는 중...";
+            display.classList.add('shuffle-anim');
+
+            let shuffleCount = 0;
+            const shuffleInterval = setInterval(() => {
+                const randomName = availablePool[Math.floor(Math.random() * availablePool.length)];
+                display.innerText = randomName;
+                shuffleCount++;
+
+                // Stop condition
+                if (shuffleCount > 30) {
+                    clearInterval(shuffleInterval);
+                    const winner = availablePool[Math.floor(Math.random() * availablePool.length)];
+                    finalizeWinner(winner);
+                }
+            }, 70);
+        }
+
+        function finalizeWinner(name) {
+            const display = document.getElementById('currentName');
+            const status = document.getElementById('statusTag');
+            const btnText = document.getElementById('btnText');
+            
+            display.classList.remove('shuffle-anim');
+            display.innerText = name;
+            display.classList.add('winner-pop');
+
+            status.innerText = "당첨!";
+            status.className = "inline-block bg-white/40 px-4 py-1 rounded-full text-sm font-bold mb-6";
+            btnText.innerText = "다시 뽑기";
+
+            // Add to history (at the beginning)
+            pickedStudents.unshift(name);
+            updateHistoryUI();
+
+            // Visual feedback
+            createConfetti();
+
+            setTimeout(() => {
+                display.classList.remove('winner-pop');
+                isPicking = false;
+            }, 1000);
+        }
+
+        function createConfetti() {
+            const colors = ['#fde047', '#4ade80', '#2dd4bf', '#60a5fa', '#fb923c'];
+            for (let i = 0; i < 30; i++) {
+                const conf = document.createElement('div');
+                conf.style.position = 'fixed';
+                conf.style.left = '50%';
+                conf.style.top = '50%';
+                conf.style.width = '10px';
+                conf.style.height = '10px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.borderRadius = '50%';
+                conf.style.zIndex = '100';
+                conf.style.pointerEvents = 'none';
+                document.body.appendChild(conf);
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 10 + Math.random() * 20;
+                const tx = Math.cos(angle) * 200 * Math.random();
+                const ty = Math.sin(angle) * 200 * Math.random();
+
+                conf.animate([
+                    { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                    { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+                ], {
+                    duration: 1000,
+                    easing: 'cubic-bezier(0, .9, .57, 1)'
+                }).onfinish = () => conf.remove();
+            }
+        }
+
+        function showMessage(msg) {
+            const toast = document.createElement('div');
+            toast.className = "fixed top-10 left-1/2 -translate-x-1/2 glass px-6 py-3 rounded-2xl text-white font-bold z-[100] animate-pop shadow-2xl";
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s';
+                setTimeout(() => toast.remove(), 500);
+            }, 2500);
+        }
+
+        // Handle Enter key for input
+        document.getElementById('nameInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addSingleName();
+        });
+
+    </script>
+</body>
+</html>
